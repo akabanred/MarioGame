@@ -1,0 +1,135 @@
+# ==========================
+# COCOS2D-X / C++ GAME PROJECT
+# ==========================
+
+# --- CMake build files ---
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Testing/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+build/
+win32-build/
+proj.win32/Debug.win32/
+proj.win32/Release.win32/
+*.sln
+*.vcxproj*
+*.user
+*.filters
+
+# --- Visual Studio specific ---
+.vs/
+*.VC.db
+*.VC.VC.opendb
+*.ipch
+*.pdb
+*.obj
+*.log
+*.tlog
+*.idb
+*.ilk
+*.exe
+*.dll
+*.lib
+*.exp
+*.pch
+*.suo
+*.userosscache
+*.opendb
+*.cachefile
+
+# --- Backup / temp files ---
+*.tmp
+*.bak
+*.swp
+*.swn
+*.swo
+*.orig
+*~
+
+# --- Python / setup helper caches ---
+__pycache__/
+*.pyc
+*.pyo
+
+# --- Android build outputs ---
+proj.android/app/build/
+proj.android/.gradle/
+proj.android/local.properties
+proj.android/gradle.properties
+proj.android/gradlew
+proj.android/gradlew.bat
+proj.android/gradle/
+*.apk
+*.aab
+
+# --- Xcode / Apple builds ---
+*.mode1v3
+*.mode2v3
+*.pbxuser
+*.xcuserstate
+*.xcworkspace
+DerivedData/
+
+# --- macOS / Linux system files ---
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Icon?
+.Trashes
+
+# --- Engine dependencies / downloads ---
+external/
+cocos2d/external/
+*.zip
+*.7z
+*.rar
+*.tar.gz
+
+# --- Game temporary assets ---
+*.psd
+*.xcf
+*.blend1
+*.bak
+*.tmp
+*.log
+*.dmp
+
+# --- Ignore local Cocos setup ---
+cocos2d/external/
+cocos2d/cmake-build*
+tools/cocos2d-console/.build/
+tools/cocos2d-console/build/
+tools/cocos2d-console/bin/
+tools/bindings-generator/
+tools/tojs/
+
+# --- Ignore runtime files ---
+*.ini
+*.cfg
+*.config
+*.log
+*.db
+
+# --- Node or NPM (if web tools used) ---
+node_modules/
+npm-debug.log
+
+# --- Editor / IDEs ---
+.idea/
+*.code-workspace
+
+# ==========================
+# KEEP THESE IMPORTANT FILES
+# ==========================
+!Resources/**
+!Classes/**
+!CMakeLists.txt
+!README.md
+!.gitignore
