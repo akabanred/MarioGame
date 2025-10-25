@@ -2,13 +2,13 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>F:\Projects\MarioGame\proj.win32\Debug\ZERO_CHECK</FullPath>
+      <FullPath>D:\Mario\MarioGame\proj.win32\Debug\ZERO_CHECK</FullPath>
     </ProjectOutput>
     <ProjectOutput>
-      <FullPath>F:\Projects\MarioGame\proj.win32\Debug\SYNC_RESOURCE-MarioGame</FullPath>
+      <FullPath>D:\Mario\MarioGame\proj.win32\Debug\SYNC_RESOURCE-MarioGame</FullPath>
     </ProjectOutput>
     <ProjectOutput>
-      <FullPath>F:\Projects\MarioGame\proj.win32\bin\MarioGame\Debug\MarioGame.exe</FullPath>
+      <FullPath>D:\Mario\MarioGame\proj.win32\bin\MarioGame\Debug\MarioGame.exe</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />

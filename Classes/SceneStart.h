@@ -7,12 +7,14 @@ public:
 	CREATE_FUNC(SceneStart);
 
 private:
+ 	bool _isSoundOn = true;  // lưu trạng thái âm thanh (bật/tắt)
 	bool init();
 	void addCtrlMenu();
 	void startCallback(Ref*);
 	void setupCallback(Ref*);
 	void quitCallback(Ref*);
 	void aboutCallback(Ref*);
+	
 };
 
 #endif
