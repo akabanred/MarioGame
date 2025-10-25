@@ -6,6 +6,8 @@ USING_NS_CC;
 class SceneLoadResource:public Scene
 {
 public:
+	static cocos2d::Scene* createScene();
+
 	CREATE_FUNC(SceneLoadResource);
 	bool init();
 	virtual void onEnter() override;

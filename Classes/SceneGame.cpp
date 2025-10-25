@@ -6,6 +6,8 @@
 #include "Mario.h"
 #include "Item.h"
 #include "ItemMushroom.h"
+#include "SceneLoadResource.h"
+USING_NS_CC;
 SceneGame* SceneGame::create(int level){
 	 SceneGame* pRet = new SceneGame();
 	 if (pRet&&pRet->init(level)){
@@ -41,6 +43,7 @@ void SceneGame::addMap(){
 
 }
 void SceneGame::addCtrlButton(){
+
 	//���ӿ�����屳��
 	Sprite* crtlBG = Sprite::createWithTexture(Director::getInstance()->getTextureCache()->addImage("controlUI.png"));
 	crtlBG->setPosition(Vec2(0, 0));
@@ -114,16 +117,16 @@ void SceneGame::addCtrlButton(){
 	jumpMenu->addChild(jumpItem);
 
 
-	// auto winSize = Director::getInstance()->getWinSize();
+	
+    // === Nút Setting ===
+    auto labelSetting = Label::createWithTTF("Setting", "fonts/Marker Felt.ttf", 26);
+    auto settingItem = MenuItemLabel::create(labelSetting, CC_CALLBACK_1(SceneGame::openSettingMenu, this));
+    settingItem->setPosition(Vec2(40, winSize.height - 20)); // góc trái trên
+    labelSetting->setScale(0.8f);
 
-    // // === Nút chữ "Pause" ===
-    // auto labelPause = Label::createWithTTF("Pause", "fonts/Marker Felt.ttf", 28);
-    // auto pauseItem = MenuItemLabel::create(labelPause, CC_CALLBACK_1(SceneGame::pauseGameCallback, this));
-    // pauseItem->setPosition(Vec2(winSize.width - 60, winSize.height - 40)); // góc phải trên
-
-    // auto menu = Menu::create(pauseItem, nullptr);
-    // menu->setPosition(Vec2::ZERO);
-    // this->addChild(menu, 10);
+    auto menu = Menu::create(settingItem, nullptr);
+    menu->setPosition(Vec2::ZERO);
+    this->addChild(menu, 10);
 }
 void SceneGame::addMapObjectGroup(){
 	//���ص�ͼ����Ԫ��
@@ -615,21 +618,57 @@ void SceneGame::destroyBlock(Sprite* block) {
 
 }
 
-// void SceneGame::pauseGameCallback(Ref* sender) {
-//     auto menuItem = (MenuItemLabel*)sender;
-//     auto label = (Label*)menuItem->getLabel();
+void SceneGame::openSettingMenu(Ref* sender) {
+    // Tạm dừng game
+    Director::getInstance()->pause();
 
-//     if (Director::getInstance()->isPaused()) {
-//         // Resume game
-//         Director::getInstance()->resume();
-//         label->setString("Pause");
-//         CocosDenshion::SimpleAudioEngine::getInstance()->resumeBackgroundMusic();
-//     } else {
-//         // Pause game
-//         Director::getInstance()->pause();
-//         label->setString("Resume");
-//         CocosDenshion::SimpleAudioEngine::getInstance()->pauseBackgroundMusic();
-//     }
-// }
+    // Tạo lớp nền mờ
+    auto layerColor = LayerColor::create(Color4B(0, 0, 0, 150));
+    layerColor->setName("PauseLayer"); // để dễ xóa sau
+    this->addChild(layerColor, 20);
+
+    // === Nút Resume ===
+    auto labelResume = Label::createWithTTF("Resume", "fonts/Marker Felt.ttf", 28);
+    auto resumeItem = MenuItemLabel::create(labelResume, CC_CALLBACK_1(SceneGame::resumeGameCallback, this));
+
+    // === Nút Quit ===
+    auto labelQuit = Label::createWithTTF("Quit", "fonts/Marker Felt.ttf", 28);
+    auto quitItem = MenuItemLabel::create(labelQuit, CC_CALLBACK_1(SceneGame::quitGameCallback, this));
+
+    // === Nút Bật/Tắt âm thanh ===
+    std::string soundText = isSoundOnn ? "Sound: ON" : "Sound: OFF";
+    auto labelSound = Label::createWithTTF(soundText, "fonts/Marker Felt.ttf", 28);
+    auto soundItem = MenuItemLabel::create(labelSound, CC_CALLBACK_1(SceneGame::toggleSoundCallback, this));
+
+    // Tạo menu
+    auto menu = Menu::create(resumeItem, soundItem, quitItem, nullptr);
+    menu->alignItemsVerticallyWithPadding(15);
+    menu->setPosition(Vec2(winSize.width / 2, winSize.height / 2));
+    layerColor->addChild(menu);
+}
+
+void SceneGame::resumeGameCallback(Ref* sender) {
+    this->removeChildByName("PauseLayer");
+    Director::getInstance()->resume();
+}
+
+void SceneGame::quitGameCallback(Ref* sender) {
+    Director::getInstance()->resume(); // tránh bị pause ở scene mới
+    Director::getInstance()->replaceScene(SceneLoadResource::createScene());
+}
+
+void SceneGame::toggleSoundCallback(Ref* sender) {
+    isSoundOnn = !isSoundOnn;
+    // Cập nhật lại chữ
+    auto layer = this->getChildByName("PauseLayer");
+    if (layer) {
+        layer->removeFromParent();
+        openSettingMenu(nullptr); // mở lại menu với chữ cập nhật
+    }
+
+    // Ở đây bạn có thể thêm code bật/tắt âm thật, ví dụ:
+    // if (isSoundOnn) SimpleAudioEngine::getInstance()->resumeBackgroundMusic();
+    // else SimpleAudioEngine::getInstance()->pauseBackgroundMusic();
+}
 
 
