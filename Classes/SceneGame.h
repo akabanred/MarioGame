@@ -27,6 +27,7 @@ private:
 	bool init(int level);
 	void addMap();
 	void addCtrlButton();
+	// void pauseGameCallback(Ref* sender);
 	void addMapObjectGroup();
 	void addAnimationToCache();
 
