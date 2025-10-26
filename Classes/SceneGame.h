@@ -27,6 +27,13 @@ private:
 	bool init(int level);
 	void addMap();
 	void addCtrlButton();
+	bool isSoundOnn = true; 
+
+    void openSettingMenu(Ref* sender);
+    void resumeGameCallback(Ref* sender);
+    void quitGameCallback(Ref* sender);
+    void toggleSoundCallback(Ref* sender);
+
 	void addMapObjectGroup();
 	void addAnimationToCache();
 

@@ -8,20 +8,20 @@ bool SceneLoadResource::init() {
 	
 	copyResourceFileNameToClassMember();
 	
-	//¼ÓÔØ±³¾°
+	//ï¿½ï¿½ï¿½Ø±ï¿½ï¿½ï¿½
 	Sprite* bg = Sprite::create(IMAGE_bg);
 	bg->setPosition(center);
 	bg->setScale(winSize.height/bg->getBoundingBox().size.height);
 	addChild(bg);
 
-	//½ø¶ÈÌõ±³¾°
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	auto  bar_bg = Sprite::create(IMAGE_sliderTrack);
 	bar_bg->setPosition(center);
 	addChild(bar_bg);
 
 	auto timer_spr = Sprite::create(IMAGE_sliderProgress);
 
-	//¼ÓÔØ½ø¶ÈÌõ
+	//ï¿½ï¿½ï¿½Ø½ï¿½ï¿½ï¿½ï¿½ï¿½
 	_bar = ProgressTimer::create(timer_spr);
 	addChild(_bar);
 
@@ -55,7 +55,7 @@ void SceneLoadResource::onEnter() {
 			_bar->setPercentage(_loadFileCount*100 / _allFineNum);
 			
 			if (_loadFileCount == _allFineNum) {
-				//¼ÓÔØÍê³É£¬Ìø½ø¿ªÊ¼ÓÎÏ·²Ëµ¥
+				//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½Ï·ï¿½Ëµï¿½
 				
 				Director::getInstance()->replaceScene(SceneStart::create());
 			}
@@ -198,4 +198,9 @@ void SceneLoadResource::copyResourceFileNameToClassMember(){
 	for (auto musicFileName : musicfiles){
 		_musicfiles.push_back(musicFileName);
 	}
+}
+cocos2d::Scene* SceneLoadResource::createScene()
+{
+    auto scene = SceneLoadResource::create();
+    return scene;
 }

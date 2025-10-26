@@ -6,6 +6,8 @@
 #include "Mario.h"
 #include "Item.h"
 #include "ItemMushroom.h"
+#include "SceneLoadResource.h"
+USING_NS_CC;
 SceneGame* SceneGame::create(int level){
 	 SceneGame* pRet = new SceneGame();
 	 if (pRet&&pRet->init(level)){
@@ -41,13 +43,14 @@ void SceneGame::addMap(){
 
 }
 void SceneGame::addCtrlButton(){
-	//Ôö¼Ó¿ØÖÆÃæ°å±³¾°
+
+	//ï¿½ï¿½ï¿½Ó¿ï¿½ï¿½ï¿½ï¿½ï¿½å±³ï¿½ï¿½
 	Sprite* crtlBG = Sprite::createWithTexture(Director::getInstance()->getTextureCache()->addImage("controlUI.png"));
 	crtlBG->setPosition(Vec2(0, 0));
 	crtlBG->setAnchorPoint(Vec2(0, 0));
 	addChild(crtlBG);
 
-	//×Ô¶¨Òå²Ëµ¥£¬ÊµÏÖÁ¬Ðøµã»÷¹¦ÄÜ
+	//ï¿½Ô¶ï¿½ï¿½ï¿½Ëµï¿½ï¿½ï¿½Êµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	MenuCtrl * dirMenu = MenuCtrl::create();
 	addChild(dirMenu);
 
@@ -56,7 +59,7 @@ void SceneGame::addCtrlButton(){
 	_textureDirRight = Director::getInstance()->getTextureCache()->addImage("backKeyRight.png");
 
 
-	//·½Ïò¿ØÖÆ¼üÐ§¹û
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¼ï¿½Ð§ï¿½ï¿½
 	_menuShow = Sprite::createWithTexture(_textureDirNone);
 	Vec2 menuBGPoint(80, 50);
 	_menuShow->setPosition(menuBGPoint);
@@ -94,7 +97,7 @@ void SceneGame::addCtrlButton(){
 	dirMenu->addChild(menuItemRight);
 
 
-	/*ÌøÔ¾¼ü*/
+	/*ï¿½ï¿½Ô¾ï¿½ï¿½*/
 	Menu* jumpMenu = Menu::create();
 	addChild(jumpMenu);
 
@@ -113,9 +116,20 @@ void SceneGame::addCtrlButton(){
 	jumpItem->setPosition(Vec2(130, -110));
 	jumpMenu->addChild(jumpItem);
 
+
+	
+    // === NÃºt Setting ===
+    auto labelSetting = Label::createWithTTF("Setting", "fonts/Marker Felt.ttf", 26);
+    auto settingItem = MenuItemLabel::create(labelSetting, CC_CALLBACK_1(SceneGame::openSettingMenu, this));
+    settingItem->setPosition(Vec2(40, winSize.height - 20)); // gÃ³c trÃ¡i trÃªn
+    labelSetting->setScale(0.8f);
+
+    auto menu = Menu::create(settingItem, nullptr);
+    menu->setPosition(Vec2::ZERO);
+    this->addChild(menu, 10);
 }
 void SceneGame::addMapObjectGroup(){
-	//¼ÓÔØµØÍ¼¶ÔÏóÔªËØ
+	//ï¿½ï¿½ï¿½Øµï¿½Í¼ï¿½ï¿½ï¿½ï¿½Ôªï¿½ï¿½
 	TMXObjectGroup* objGroup = _map->getObjectGroup("objects");
 	ValueVector& values = objGroup->getObjects();
 
@@ -127,7 +141,7 @@ void SceneGame::addMapObjectGroup(){
 			const Value& x = map.at("x");
 			const Value& y = map.at("y");
 
-			//´´½¨mario
+			//ï¿½ï¿½ï¿½ï¿½mario
 			_mario = Mario::getInstance();
 			_mario->setDead(false);
 			_mario->setPosition(Vec2(x.asInt(), y.asInt() - _map->getTileSize().height));
@@ -164,8 +178,8 @@ void SceneGame::addMapObjectGroup(){
 	}
 }
 void SceneGame::addAnimationToCache(){
-	//¼ÓÔØÄ¢¹½¹Ö×ÊÔ´
-	//¼ÓÔØ¶¯»­×ÊÔ´
+	//ï¿½ï¿½ï¿½ï¿½Ä¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô´
+	//ï¿½ï¿½ï¿½Ø¶ï¿½ï¿½ï¿½ï¿½ï¿½Ô´
 	{
 		Animation* animation = myutil::createAnimation("Mushroom0.png", 0, 2,
 															  16, 0.1f);
@@ -178,7 +192,7 @@ void SceneGame::addAnimationToCache(){
 		SpriteFrameCache::getInstance()->addSpriteFrame(dead2, "mushroomDead2");
 	}
 	{
-		//¼ÓÔØÎÚ¹êµÄ¶¯»­×ÊÔ´
+		//ï¿½ï¿½ï¿½ï¿½ï¿½Ú¹ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½ï¿½Ô´
 		Animation* animation1 = myutil::createAnimation("tortoise0.png", 2, 2,
 															  18, 0.4f);
 		AnimationCache::getInstance()->addAnimation(animation1, "tortoiseLeftMoving");
@@ -198,7 +212,7 @@ void SceneGame::addAnimationToCache(){
 	}
 
 	{
-		//¼ÓÔØ·ÉÌìÎÚ¹êµÄ¶¯»­×ÊÔ´
+		//ï¿½ï¿½ï¿½Ø·ï¿½ï¿½ï¿½ï¿½Ú¹ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½ï¿½Ô´
 		Animation* animation1 = myutil::createAnimation("tortoise0.png", 0, 2,
 														  18, 0.4f);
 		AnimationCache::getInstance()->addAnimation(animation1, "tortoiseFlyLeft");
@@ -211,7 +225,7 @@ void SceneGame::addAnimationToCache(){
 
 	}
 	{
-		//¼ÓÔØ»¨×ÊÔ´
+		//ï¿½ï¿½ï¿½Ø»ï¿½ï¿½ï¿½Ô´
 		Animation* animation = myutil::createAnimation("flower0.png", 0, 2,
 														 16, 0.5f);
 		AnimationCache::getInstance()->addAnimation(animation, "flowerShow");
@@ -249,7 +263,7 @@ void SceneGame::addAnimationToCache(){
 void SceneGame::onEnter(){
 	Scene::onEnter();
 	//cocos2d-x
-	//²¥·Å±³¾°ÒôÀÖ
+	//ï¿½ï¿½ï¿½Å±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	CocosDenshion::SimpleAudioEngine::getInstance()->playBackgroundMusic("OnLand.wma",true);
 	CocosDenshion::SimpleAudioEngine::getInstance()->setBackgroundMusicVolume(0.5f);
 	scheduleUpdate();
@@ -287,7 +301,7 @@ void SceneGame::marioEatCoinCheck(float delta){
 			continue;
 		int gid = coinLayer->getTileGIDAt(ptTile);
 		if (gid){
-			//²¥·Å³Ô½ð±ÒµÄÉùÒô
+			//ï¿½ï¿½ï¿½Å³Ô½ï¿½Òµï¿½ï¿½ï¿½ï¿½ï¿½
 			CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("EatCoin.wma");
 			coinLayer->setTileGID(0, ptTile);
 		}
@@ -299,7 +313,7 @@ void SceneGame::marioEatHideMushroomCheck(){
 		for (auto mushroom : _mushrooms){
 			Rect rect = mushroom->getBoundingBox();
 			if (rect.intersectsRect(this->getBoundingBox())){
-				//¶¥µ½Òþ²ØµÄÄ¢¹½ÁË
+				//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Øµï¿½Ä¢ï¿½ï¿½ï¿½ï¿½
 				
 			}
 		}
@@ -345,10 +359,10 @@ void SceneGame::moveMarioCheck(float delta){
 	default:
 		break;
 	}
-	//Ã¿¸öÖ¡Ñ­»·¶¼È¥ÍùÉÏÒÆ¶¯,ÊúÖ±·½ÏòÓÐËÙ¶ÈÔòÒÆ¶¯,Ã»ËÙ¶ÈÔò¾²Ö¹
+	//Ã¿ï¿½ï¿½Ö¡Ñ­ï¿½ï¿½ï¿½ï¿½È¥ï¿½ï¿½ï¿½ï¿½ï¿½Æ¶ï¿½,ï¿½ï¿½Ö±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½ï¿½ï¿½ï¿½Æ¶ï¿½,Ã»ï¿½Ù¶ï¿½ï¿½ï¿½Ö¹
 	_mario->moveVerticalCheck(delta);
 
-	//Ã¿¸öÖ¡Ñ­»·¶¼È¥×óÓÒÒÆ¶¯,×óÓÒ·½ÏòÓÐËÙ¶ÈÔòÒÆ¶¯,Ã»ËÙ¶ÈÔò¾²Ö¹
+	//Ã¿ï¿½ï¿½Ö¡Ñ­ï¿½ï¿½ï¿½ï¿½È¥ï¿½ï¿½ï¿½ï¿½ï¿½Æ¶ï¿½,ï¿½ï¿½ï¿½Ò·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½ï¿½ï¿½ï¿½Æ¶ï¿½,Ã»ï¿½Ù¶ï¿½ï¿½ï¿½Ö¹
 	_mario->moveHorizontalCheck(delta);
 	
 
@@ -378,11 +392,11 @@ void SceneGame::checkMarioTouchPole(float dt){
 	TMXLayer* layer = _map->getLayer("flagpole");
 	
 	if (layer->getTileGIDAt(ptTile)){
-		//Åöµ½Æì¸ËÁË
+		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		_mario->autoRun();
 		unschedule(CC_SCHEDULE_SELECTOR(SceneGame::checkMarioTouchPole));
 
-		//¿ªÆôÊÇ·ñÅöµ½ÖÕµãÅö×²¼ì²â
+		//ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õµï¿½ï¿½ï¿½×²ï¿½ï¿½ï¿½
 		schedule(CC_SCHEDULE_SELECTOR(SceneGame::checkMarioTouchEndPointCallback));
 	}
 }
@@ -395,14 +409,14 @@ void SceneGame::checkMarioTouchEndPointCallback(float dt){
 						
 			_mario->endAutoRun();
 			
-			//ÒòÎªÏÂÒ»¸ö³¡¾°ÐèÒªÓÃµ½£¬ËùÒÔÈÃ_mario´æ´¢µÄ¸¸Ç×½ÚµãÖ¸ÕëÖÃ¿Õ
+			//ï¿½ï¿½Îªï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½Ãµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½_marioï¿½æ´¢ï¿½Ä¸ï¿½ï¿½×½Úµï¿½Ö¸ï¿½ï¿½ï¿½Ã¿ï¿½
 			_mario->removeFromParent();
 			Director::getInstance()->
 				replaceScene(SceneGame::create(_level + 1));
 		}
 		else{
 			
-			//È«²¿¹ý¹Ø
+			//È«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 			Director::getInstance()->
 				replaceScene(SceneStart::create());
 		}
@@ -414,16 +428,16 @@ void SceneGame::marioHitSomethingCheck(float dt)
 
 	if (_mario->getSpeedY() > 0) {
 		
-		//MarioÕýÔÚÉÏÉý
+		//Marioï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		
-		//µÃµ½ÏÂÒ»Ö¡MarioÍ·¶¥ÖÐ¼äµÄµã
+		//ï¿½Ãµï¿½ï¿½ï¿½Ò»Ö¡MarioÍ·ï¿½ï¿½ï¿½Ð¼ï¿½Äµï¿½
 		Vec2 marioPointOfHeadMid(_mario->getBoundingBox().getMidX(),_mario->getBoundingBox().getMaxY()+ _mario->getSpeedY()*dt);
 		if (marioPointOfHeadMid.y >= _map->getContentSize().height)
 			return;
 
 		Vec2 tileCoordiate;
 
-		//µÃµ½¸ÃµãµÄµØÍ¼¾«Áé
+		//ï¿½Ãµï¿½ï¿½Ãµï¿½Äµï¿½Í¼ï¿½ï¿½ï¿½ï¿½
 		Sprite* spriteInMarioHead = _map->getLayer("block")->getTileAt(tileCoordiate=myutil::bLGLPointToTile(marioPointOfHeadMid,_map));
 		
 		Sprite* marioHitTarget = nullptr;
@@ -433,35 +447,35 @@ void SceneGame::marioHitSomethingCheck(float dt)
 			blockGid = _map->getLayer("block")->getTileGIDAt(tileCoordiate);
 		}
 		else {
-			//Í·¶¥ÖÐ¼äµÄµãÃ»¶¥µ½£¬¿´¿´Í·¶¥×ó±ßµÄµãÓÐÃ»ÓÐ×²µ½
+			//Í·ï¿½ï¿½ï¿½Ð¼ï¿½Äµï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í·ï¿½ï¿½ï¿½ï¿½ßµÄµï¿½ï¿½ï¿½Ã»ï¿½ï¿½×²ï¿½ï¿½
 
-			//µÃµ½ÏÂÒ»Ö¡MarioÍ·¶¥×ó±ßµÄµã
+			//ï¿½Ãµï¿½ï¿½ï¿½Ò»Ö¡MarioÍ·ï¿½ï¿½ï¿½ï¿½ßµÄµï¿½
 			Vec2 marioPointOfHeadLeft(_mario->getBoundingBox().getMinX(), _mario->getBoundingBox().getMaxY() + _mario->getSpeedY()*dt);
 
-			//µÃµ½¸ÃµãµÄµØÍ¼¾«Áé
+			//ï¿½Ãµï¿½ï¿½Ãµï¿½Äµï¿½Í¼ï¿½ï¿½ï¿½ï¿½
 			Sprite* spriteInMarioHeadLeft = _map->getLayer("block")->getTileAt(tileCoordiate=myutil::bLGLPointToTile(marioPointOfHeadMid, _map));
 			if (spriteInMarioHeadLeft) {
-				//×ó±ß×²µ½ÁË
+				//ï¿½ï¿½ï¿½×²ï¿½ï¿½ï¿½ï¿½
 				blockGid = _map->getLayer("block")->getTileGIDAt(tileCoordiate);
 				marioHitTarget = spriteInMarioHeadLeft;
 			}
 			else
 			{
-				//×ó±ßÒ²Ã»ÓÐ£¬ÄÇÃ´ÔÙ¿´¿´ÓÒ±ß
-				//µÃµ½ÏÂÒ»Ö¡MarioÍ·¶¥ÓÒ±ßµÄµã
+				//ï¿½ï¿½ï¿½Ò²Ã»ï¿½Ð£ï¿½ï¿½ï¿½Ã´ï¿½Ù¿ï¿½ï¿½ï¿½ï¿½Ò±ï¿½
+				//ï¿½Ãµï¿½ï¿½ï¿½Ò»Ö¡MarioÍ·ï¿½ï¿½ï¿½Ò±ßµÄµï¿½
 				Vec2 marioPointOfHeadLRight(_mario->getBoundingBox().getMaxX(), _mario->getBoundingBox().getMaxY() + _mario->getSpeedY()*dt);
 
-				//µÃµ½¸ÃµãµÄµØÍ¼¾«Áé
+				//ï¿½Ãµï¿½ï¿½Ãµï¿½Äµï¿½Í¼ï¿½ï¿½ï¿½ï¿½
 				Sprite* spriteInMarioHeadRight = _map->getLayer("block")->getTileAt(tileCoordiate=myutil::bLGLPointToTile(marioPointOfHeadMid, _map));
 				if (spriteInMarioHeadRight) {
-					//ÓÒ±ß×²µ½ÁË
+					//ï¿½Ò±ï¿½×²ï¿½ï¿½ï¿½ï¿½
 					 blockGid = _map->getLayer("block")->getTileGIDAt(tileCoordiate);
 					 marioHitTarget = spriteInMarioHeadRight;
 				}
 			}
 		}
 		if (marioHitTarget) {
-			//mario¶¥µ½×©Í·ÁË
+			//marioï¿½ï¿½ï¿½ï¿½×©Í·ï¿½ï¿½
 			common::BlockType blockType = common::getBlockTypeByGid(blockGid);
 			marioHitBlockHandle(marioHitTarget, tileCoordiate, blockType);
 		}
@@ -471,19 +485,19 @@ void SceneGame::marioHitSomethingCheck(float dt)
 	
 }
 void SceneGame::marioHitBlockHandle(Sprite* block,const Vec2& tileCoordiate, common::BlockType blockType) {
-	//ÅÐ¶Ï×©Í·µÄÀàÐÍ
+	//ï¿½Ð¶ï¿½×©Í·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	switch (blockType)
 	{
 	case common::common:
 	{
 		
 		if(_mario->getState()==Mario::Small){
-			//µ¥´¿µÄÈÃ×©ÌøÒ»ÏÂ
+			//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×©ï¿½ï¿½Ò»ï¿½ï¿½
 			JumpBy*  by = JumpBy::create(0.15f, Vec2(0, 0), 8, 1);
 			block->runAction(Sequence::create(by, nullptr));
 		}
 		else {
-			//×©¿éÆÆËé
+			//×©ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 			destroyBlock(block);
 		}
 		break;
@@ -523,7 +537,7 @@ void SceneGame::marioHitBlockHandle(Sprite* block,const Vec2& tileCoordiate, com
 }
 
 void SceneGame::marioHitQuestionHandle(Sprite* block, const Vec2& tileCoordiate) {
-	//¶¥µ½question,£¬È»ºóÔÚ±ä³ÉÆÕÍ¨Ó²×ª
+	//ï¿½ï¿½ï¿½ï¿½question,ï¿½ï¿½È»ï¿½ï¿½ï¿½Ú±ï¿½ï¿½ï¿½ï¿½Í¨Ó²×ª
 	
 	_map->getLayer("block")->setTileGID(31, tileCoordiate);
 
@@ -536,7 +550,7 @@ void SceneGame::marioHitQuestionHandle(Sprite* block, const Vec2& tileCoordiate)
 		Rect rcItem = item->getBoundingBox();
 		rcItem.size = rcItem.size - Size(1, 1);
 
-		//×²µ½Ä¢¹½ÁË
+		//×²ï¿½ï¿½Ä¢ï¿½ï¿½ï¿½ï¿½
 		if (rcItem.intersectsRect(rcNode)) {
 
 			mushroom = dynamic_cast<ItemMushroom*>(item);
@@ -550,7 +564,7 @@ void SceneGame::marioHitQuestionHandle(Sprite* block, const Vec2& tileCoordiate)
 	}
 
 	if (!mushroom) {
-		//Ã»ÓÐ×²µ½Ä¢¹½£¬µ¯³öÒ»¸ö¸ÖéG
+		//Ã»ï¿½ï¿½×²ï¿½ï¿½Ä¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½G
 		TMXLayer* layer = _map->getLayer("coin");
 		Vec2 tileCoordiateCoin = tileCoordiate - Vec2(0, 1);
 		layer->setTileGID(GID_COIN, tileCoordiateCoin);
@@ -602,6 +616,59 @@ void SceneGame::destroyBlock(Sprite* block) {
 
 	block->removeFromParent();
 
+}
+
+void SceneGame::openSettingMenu(Ref* sender) {
+    // Táº¡m dá»«ng game
+    Director::getInstance()->pause();
+
+    // Táº¡o lá»›p ná»n má»
+    auto layerColor = LayerColor::create(Color4B(0, 0, 0, 150));
+    layerColor->setName("PauseLayer"); // Ä‘á»ƒ dá»… xÃ³a sau
+    this->addChild(layerColor, 20);
+
+    // === NÃºt Resume ===
+    auto labelResume = Label::createWithTTF("Resume", "fonts/Marker Felt.ttf", 28);
+    auto resumeItem = MenuItemLabel::create(labelResume, CC_CALLBACK_1(SceneGame::resumeGameCallback, this));
+
+    // === NÃºt Quit ===
+    auto labelQuit = Label::createWithTTF("Quit", "fonts/Marker Felt.ttf", 28);
+    auto quitItem = MenuItemLabel::create(labelQuit, CC_CALLBACK_1(SceneGame::quitGameCallback, this));
+
+    // === NÃºt Báº­t/Táº¯t Ã¢m thanh ===
+    std::string soundText = isSoundOnn ? "Sound: ON" : "Sound: OFF";
+    auto labelSound = Label::createWithTTF(soundText, "fonts/Marker Felt.ttf", 28);
+    auto soundItem = MenuItemLabel::create(labelSound, CC_CALLBACK_1(SceneGame::toggleSoundCallback, this));
+
+    // Táº¡o menu
+    auto menu = Menu::create(resumeItem, soundItem, quitItem, nullptr);
+    menu->alignItemsVerticallyWithPadding(15);
+    menu->setPosition(Vec2(winSize.width / 2, winSize.height / 2));
+    layerColor->addChild(menu);
+}
+
+void SceneGame::resumeGameCallback(Ref* sender) {
+    this->removeChildByName("PauseLayer");
+    Director::getInstance()->resume();
+}
+
+void SceneGame::quitGameCallback(Ref* sender) {
+    Director::getInstance()->resume(); // trÃ¡nh bá»‹ pause á»Ÿ scene má»›i
+    Director::getInstance()->replaceScene(SceneLoadResource::createScene());
+}
+
+void SceneGame::toggleSoundCallback(Ref* sender) {
+    isSoundOnn = !isSoundOnn;
+    // Cáº­p nháº­t láº¡i chá»¯
+    auto layer = this->getChildByName("PauseLayer");
+    if (layer) {
+        layer->removeFromParent();
+        openSettingMenu(nullptr); // má»Ÿ láº¡i menu vá»›i chá»¯ cáº­p nháº­t
+    }
+
+    // á»ž Ä‘Ã¢y báº¡n cÃ³ thá»ƒ thÃªm code báº­t/táº¯t Ã¢m tháº­t, vÃ­ dá»¥:
+    // if (isSoundOnn) SimpleAudioEngine::getInstance()->resumeBackgroundMusic();
+    // else SimpleAudioEngine::getInstance()->pauseBackgroundMusic();
 }
 
 
