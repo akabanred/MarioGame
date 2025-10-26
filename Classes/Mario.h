@@ -3,7 +3,7 @@
 #include "Common.h"
 #include "ItemCanMove.h"
 
-//½«mario×ö³Éµ¥Àý
+//ï¿½ï¿½marioï¿½ï¿½ï¿½Éµï¿½ï¿½ï¿½
 class Mario :public Sprite
 {
 public:
@@ -20,19 +20,19 @@ public:
 
 	TMXTiledMap*   getMap();
 
-	//¸øÂíÀï°ÂÊúÖ±·½ÏòµÄËÙ¶È
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½
 	void jump(int initV=300);
 
-	//¸øÂíÀï°ÂË®Æ½·½ÏòµÄËÙ¶È
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë®Æ½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½
 	void setHorizontalSpeed(common::Direction dir);
 
-	//ÔÚÖ¡Ñ­»·ÖÐËÙ¶È¼ì²â,Èç¹ûÓÐËÙ¶È,ÔòÒÆ¶¯
+	//ï¿½ï¿½Ö¡Ñ­ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶È¼ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½,ï¿½ï¿½ï¿½Æ¶ï¿½
 	void moveVerticalCheck(float dt);
 	void moveHorizontalCheck(float dt);
 
 
 	
-	//¸üÐÂÂíÀï°ÂÊµ¼Ê×´Ì¬
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Êµï¿½ï¿½×´Ì¬
 	void updateStatus();
 
 	
@@ -73,23 +73,27 @@ public:
 	void endAutoRun();
 	void setDead(bool isDead);
 	bool isGodMode();
-
+	void tryShoot();    
+	void fireArrow();
 private:
 	Mario(){}
 	bool init();
 	void initResourceCache();
+	int   _arrowCount = 0;
+    int   _arrowLimit = 2;
+    float _shootCooldown = 0.f;
 
 
 protected:
 	//status
 	static Mario * sm_mario;
-	common::Direction  _faceDir;	//¾²Ö¹Ê±Á³µÄ³¯Ïò
+	common::Direction  _faceDir;	//ï¿½ï¿½Ö¹Ê±ï¿½ï¿½ï¿½Ä³ï¿½ï¿½ï¿½
 				
-	Vec2	_speed;					//ËÙ¶ÈÏòÉÏÎªÕý	
+	Vec2	_speed;					//ï¿½Ù¶ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½	
 				
 	
 	bool    _isFly;
-	bool    _isGodMode;			//±»µÐÈË×²»÷ºóµÃµ½¶ÌÔÝµÄÎÞµÐÄ£Ê½
+	bool    _isGodMode;			//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×²ï¿½ï¿½ï¿½ï¿½Ãµï¿½ï¿½ï¿½ï¿½Ýµï¿½ï¿½Þµï¿½Ä£Ê½
 	int		_life;
 	CC_SYNTHESIZE(State, _state, State);
 	

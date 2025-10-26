@@ -2,10 +2,10 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>D:\Mario\MarioGame\proj.win32\Debug\ZERO_CHECK</FullPath>
+      <FullPath>F:\Projects\MarioGame\proj.win32\Debug\ZERO_CHECK</FullPath>
     </ProjectOutput>
     <ProjectOutput>
-      <FullPath>D:\Mario\MarioGame\proj.win32\Debug\SYNC_RESOURCE-MarioGame</FullPath>
+      <FullPath>F:\Projects\MarioGame\proj.win32\Debug\SYNC_RESOURCE-MarioGame</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />

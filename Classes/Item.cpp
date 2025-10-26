@@ -1,11 +1,10 @@
-
 #include "Item.h"
+#include "cocos2d.h"
+
 #include "ItemMushroomMonster.h"
 #include "ItemMushroom.h"
 #include "ItemTortoise.h"
 #include "ItemFlower.h"
-#include "ItemMushroom.h"
-#include "ItemMushroom.h"
 #include "ItemFlagpoint.h"
 #include "ItemFinalpoint.h"
 #include "ItemLadderLR.h"
@@ -14,127 +13,103 @@
 #include "ItemTortoiseFly.h"
 #include "ItemLadderUD.h"
 #include "ItemFireString.h"
-#include "ItemBoss.h"
 #include "ItemBridgeStartPos.h"
 #include "Mario.h"
+#include "Common.h"
+#include "ItemBoss.h"
 
 
-Item* Item::create( ValueMap&map)
+USING_NS_CC;
+
+Item* Item::create(ValueMap& map)
 {
+    const auto it = map.find("type");
+    if (it == map.end()) return nullptr;
+    const std::string type = it->second.asString();
+
+    if (type == "mushroom")            return ItemMushroomMonster::create(map);
+    else if (type == "tortoise")       return ItemTortoise::create(map);
+    else if (type == "flower")         return ItemFlower::create(map);
+    else if (type == "MushroomReward") return ItemMushroom::create(map);
+    else if (type == "MushroomAddLife")return ItemMushroom::create(map);
+    else if (type == "flagpoint")      return ItemFlagpoint::create(map);
+    else if (type == "finalpoint")     return ItemFinalpoint::create(map);
+    else if (type == "ladderLR")       return ItemLadderLR::create(map);
+    else if (type == "flyfish")        return ItemFlyFish::create(map);
+    else if (type == "tortoise_round") return ItemTortoiseRound::create(map);
+    else if (type == "tortoise_fly")   return ItemTortoiseFly::create(map);
+    else if (type == "ladderUD")       return ItemLadderUD::create(map);
+    else if (type == "fire_string")    return ItemFireString::create(map);
+    else if (type == "bridgestartpos") return ItemBridgeStartPos::create(map);
 	
-	const Value& type = map.at("type");
-	if (type.asString() == "mushroom"){
-		return ItemMushroomMonster::create(map);
-	}
-	else  if (type.asString() == "tortoise"){
-		return ItemTortoise::create(map);
-	}
-	else if (type.asString() == "flower"){
-		return ItemFlower::create(map);
-	}
-	else if (type.asString() == "MushroomReward"){
-		ItemMushroom* mushroomReward = ItemMushroom::create(map);
-		return mushroomReward;
-	}
-	else if (type.asString() == "MushroomAddLife"){
-		ItemMushroom* itemMushroomAddLife = ItemMushroom::create(map);
 
 
-		return itemMushroomAddLife;
-	}
-	else if (type.asString() == "flagpoint"){
-		return	ItemFlagpoint::create(map);
-	}
-	else if (type.asString() == "finalpoint"){
-		return ItemFinalpoint::create(map);
-	}
-	else if (type.asString() == "ladderLR"){
-		return ItemLadderLR::create(map);
-	}
-	else if (type.asString() == "flyfish"){
-		return ItemFlyFish::create(map);
-	}
-	else if (type.asString() == "tortoise_round"){
-		return ItemTortoiseRound::create(map);
-	}
-	else if (type.asString() == "tortoise_fly"){
-		return ItemTortoiseFly::create(map);
-	}
-	else if (type.asString() == "ladderUD"){
-		return ItemLadderUD::create(map);
-	}
-	else if (type.asString() == "fire_string"){
-		return ItemFireString::create(map);
-	}
-	else if (type.asString() == "boss"){
-		return ItemBoss::create(map);
-	}
-	else if (type.asString() == "bridgestartpos"){
-		return ItemBridgeStartPos::create(map);
-	}
-
-
-	return NULL;
+    return nullptr;
 }
 
-void Item::setPositionByProperty(const ValueMap& dict){
+void Item::setPositionByProperty(const ValueMap& dict)
+{
+    
+    float x = 0.f, y = 0.f;
+    auto itx = dict.find("x");
+    auto ity = dict.find("y");
+    if (itx != dict.end()) x = itx->second.asFloat();
+    if (ity != dict.end()) y = ity->second.asFloat();
 
-	const Value& x = dict.at("x");
-	const Value& y = dict.at("y");
-	setPosition(Vec2(x.asInt(), y.asInt()-16));
-	this->setIgnoreAnchorPointForPosition(true);
+    setPosition(Vec2(x, y - 16.0f));
+    setIgnoreAnchorPointForPosition(true);
 }
+
 bool Item::init()
 {
-	Sprite::init();
-	setLocalZOrder(common::ZO_MUSHROOM);
-	
-	return true;
-}
-void Item::onEnter(){
-	Sprite::onEnter();
-	scheduleUpdate();
-	
-}
-void Item::onExit(){
-	
-	unscheduleUpdate();
-	Sprite::onExit();
+    Sprite::init();
+    setLocalZOrder(common::ZO_MUSHROOM);
+    return true;
 }
 
-
-void Item::update(float dt){
-	collisionCheck(dt);
+void Item::onEnter()
+{
+    Sprite::onEnter();
+    scheduleUpdate();
 }
 
-bool Item::isAppearInWindow(){
-	Vec2 ptInMap = getPosition();
-	TMXTiledMap* map = getMap();
-	Vec2 ptInWorld = map->convertToWorldSpace(ptInMap);
-	return ( ptInWorld.x < winSize.width);
-	
+void Item::onExit()
+{
+    unscheduleUpdate();
+    Sprite::onExit();
 }
 
-TMXTiledMap* Item::getMap(){
-	return (TMXTiledMap*)getParent();
-}
-bool Item::isOutOfWindow(){
-	Vec2	ptWorld=getMap()->convertToWorldSpace(getPosition());
-	return (ptWorld.x < -winSize.width) || (getPositionY() <= -getBoundingBox().size.height);
+void Item::update(float dt)
+{
+    collisionCheck(dt);
 }
 
-
-
-void Item::autoDropFlag(){
-
+bool Item::isAppearInWindow()
+{
+    auto* map = getMap();
+    if (!map) return false;
+    Vec2 ptWorld = map->convertToWorldSpace(getPosition());
+    return (ptWorld.x < winSize.width);
 }
 
- 
+TMXTiledMap* Item::getMap()
+{
+    return dynamic_cast<TMXTiledMap*>(getParent());
+}
 
+bool Item::isOutOfWindow()
+{
+    auto* map = getMap();
+    if (!map) return true;
+    Vec2 ptWorld = map->convertToWorldSpace(getPosition());
+    return (ptWorld.x < -winSize.width) || (getPositionY() <= -getBoundingBox().size.height);
+}
 
- 
- void Item::runAnimation(const char* name){
-	 Animation* animation = AnimationCache::getInstance()->
-		 getAnimation(name);
-	 runAction(RepeatForever::create(Animate::create(animation)));
- }
+void Item::autoDropFlag() {}
+
+void Item::runAnimation(const char* name)
+{
+    auto anim = AnimationCache::getInstance()->getAnimation(name);
+    if (anim)
+        runAction(RepeatForever::create(Animate::create(anim)));
+}
