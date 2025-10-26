@@ -26,8 +26,12 @@ THE SOFTWARE.
 #include "ui/UILayout.h"
 #include "ui/UIHelper.h"
 #include "ui/UIScale9Sprite.h"
+#include "renderer/CCGLProgram.h"
+#include "renderer/CCGLProgramCache.h"
+#include "renderer/ccGLStateCache.h"
 #include "renderer/CCRenderState.h"
 #include "base/CCDirector.h"
+#include "2d/CCDrawingPrimitives.h"
 #include "renderer/CCRenderer.h"
 #include "ui/UILayoutManager.h"
 #include "2d/CCDrawNode.h"
@@ -36,7 +40,6 @@ THE SOFTWARE.
 #include "base/CCEventFocus.h"
 #include "base/CCStencilStateManager.h"
 #include "editor-support/cocostudio/CocosStudioExtension.h"
-#include <algorithm>
 
 
 NS_CC_BEGIN
@@ -221,9 +224,6 @@ void Layout::visit(Renderer *renderer, const Mat4 &parentTransform, uint32_t par
         return;
     }
     
-    if (FLAGS_TRANSFORM_DIRTY & parentFlags || _transformUpdated || _contentSizeDirty)
-        _clippingRectDirty = true;
-
     adaptRenderers();
     doLayout();
     
@@ -243,8 +243,7 @@ void Layout::visit(Renderer *renderer, const Mat4 &parentTransform, uint32_t par
     }
     else
     {
-        //no need to adapt render again
-        ProtectedNode::visit(renderer, parentTransform, parentFlags);
+        Widget::visit(renderer, parentTransform, parentFlags);
     }
 }
     
@@ -269,10 +268,9 @@ void Layout::stencilClippingVisit(Renderer *renderer, const Mat4& parentTransfor
     
     renderer->pushGroup(_groupCommand.getRenderQueueID());
     
-//    _beforeVisitCmdStencil.init(_globalZOrder);
-//    _beforeVisitCmdStencil.func = CC_CALLBACK_0(StencilStateManager::onBeforeVisit, _stencilStateManager);
-//    renderer->addCommand(&_beforeVisitCmdStencil);
-    _stencilStateManager->onBeforeVisit(_globalZOrder);
+    _beforeVisitCmdStencil.init(_globalZOrder);
+    _beforeVisitCmdStencil.func = CC_CALLBACK_0(StencilStateManager::onBeforeVisit, _stencilStateManager);
+    renderer->addCommand(&_beforeVisitCmdStencil);
     
     _clippingStencil->visit(renderer, _modelViewTransform, flags);
     
@@ -340,8 +338,7 @@ void Layout::onBeforeVisitScissor()
     _scissorOldState = glview->isScissorEnabled();
     if (false == _scissorOldState)
     {
-        auto renderer = Director::getInstance()->getRenderer();
-        renderer->setScissorTest(true);
+        glEnable(GL_SCISSOR_TEST);
     }
 
     // apply scissor box
@@ -373,8 +370,7 @@ void Layout::onAfterVisitScissor()
     else
     {
         // revert scissor test
-        auto renderer = Director::getInstance()->getRenderer();
-        renderer->setScissorTest(false);
+        glDisable(GL_SCISSOR_TEST);
     }
 }
     
@@ -384,16 +380,6 @@ void Layout::scissorClippingVisit(Renderer *renderer, const Mat4& parentTransfor
     {
         _clippingRectDirty = true;
     }
-    
-    Director* director = Director::getInstance();
-    CCASSERT(nullptr != director, "Director is null when setting matrix stack");
-    director->pushMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW);
-    director->loadMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW, _modelViewTransform);
-    
-    _groupCommand.init(_globalZOrder);
-    renderer->addCommand(&_groupCommand);
-    renderer->pushGroup(_groupCommand.getRenderQueueID());
-
     _beforeVisitCmdScissor.init(_globalZOrder);
     _beforeVisitCmdScissor.func = CC_CALLBACK_0(Layout::onBeforeVisitScissor, this);
     renderer->addCommand(&_beforeVisitCmdScissor);
@@ -403,9 +389,6 @@ void Layout::scissorClippingVisit(Renderer *renderer, const Mat4& parentTransfor
     _afterVisitCmdScissor.init(_globalZOrder);
     _afterVisitCmdScissor.func = CC_CALLBACK_0(Layout::onAfterVisitScissor, this);
     renderer->addCommand(&_afterVisitCmdScissor);
-    
-    renderer->popGroup();
-    director->popMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW);
 }
 
 void Layout::setClippingEnabled(bool able)
@@ -480,20 +463,16 @@ const Rect& Layout::getClippingRect()
 {
     if (_clippingRectDirty)
     {
-        const auto worldPos1 = convertToWorldSpace(Vec2::ZERO);
-        const auto worldPos2 = convertToWorldSpace(Vec2(_contentSize.width, _contentSize.height));
-
-        //Node can be flipped
-        const auto worldPos = Vec2(std::min(worldPos1.x, worldPos2.x), std::min(worldPos1.y, worldPos2.y));
-        const auto scissorWidth = std::fabs(worldPos2.x - worldPos1.x);
-        const auto scissorHeight = std::fabs(worldPos2.y - worldPos1.y);
-
+        const Vec2 worldPos = convertToWorldSpace(Vec2::ZERO);
+        const AffineTransform t = getNodeToWorldAffineTransform();
+        const float scissorWidth = _contentSize.width * t.a;
+        const float scissorHeight = _contentSize.height * t.d;
         Layout* parent = this;
 
         while (parent)
         {
             parent = dynamic_cast<Layout*>(parent->getParent());
-            if (parent)
+            if(parent)
             {
                 if (parent->isClippingEnabled())
                 {
@@ -502,19 +481,49 @@ const Rect& Layout::getClippingRect()
                 }
             }
         }
-
+        
         if (_clippingParent)
         {
-            const auto& parentClippingRect = _clippingParent->getClippingRect();
-
-            _clippingRect.origin.x = std::max(parentClippingRect.origin.x, worldPos.x);
-            _clippingRect.origin.y = std::max(parentClippingRect.origin.y, worldPos.y);
-
-            const auto right = std::min(parentClippingRect.origin.x + parentClippingRect.size.width, worldPos.x + scissorWidth);
-            const auto top = std::min(parentClippingRect.origin.y + parentClippingRect.size.height, worldPos.y + scissorHeight);
-
-            _clippingRect.size.width = std::max(0.0f, right - _clippingRect.origin.x);
-            _clippingRect.size.height = std::max(0.0f, top - _clippingRect.origin.y);
+            const Rect& parentClippingRect = _clippingParent->getClippingRect();
+            float finalX = worldPos.x;
+            float finalY = worldPos.y;
+            float finalWidth = scissorWidth;
+            float finalHeight = scissorHeight;
+            
+            const float leftOffset = worldPos.x - parentClippingRect.origin.x;
+            if (leftOffset < 0.0f)
+            {
+                finalX = parentClippingRect.origin.x;
+                finalWidth += leftOffset;
+            }
+            const float rightOffset = (worldPos.x + scissorWidth) - (parentClippingRect.origin.x + parentClippingRect.size.width);
+            if (rightOffset > 0.0f)
+            {
+                finalWidth -= rightOffset;
+            }
+            const float topOffset = (worldPos.y + scissorHeight) - (parentClippingRect.origin.y + parentClippingRect.size.height);
+            if (topOffset > 0.0f)
+            {
+                finalHeight -= topOffset;
+            }
+            const float bottomOffset = worldPos.y - parentClippingRect.origin.y;
+            if (bottomOffset < 0.0f)
+            {
+                finalY = parentClippingRect.origin.y;
+                finalHeight += bottomOffset;
+            }
+            if (finalWidth < 0.0f)
+            {
+                finalWidth = 0.0f;
+            }
+            if (finalHeight < 0.0f)
+            {
+                finalHeight = 0.0f;
+            }
+            _clippingRect.origin.x = finalX;
+            _clippingRect.origin.y = finalY;
+            _clippingRect.size.width = finalWidth;
+            _clippingRect.size.height = finalHeight;
         }
         else
         {
@@ -799,7 +808,7 @@ const Color3B& Layout::getBackGroundEndColor()const
     return _gEndColor;
 }
 
-void Layout::setBackGroundColorOpacity(uint8_t opacity)
+void Layout::setBackGroundColorOpacity(GLubyte opacity)
 {
     _cOpacity = opacity;
     switch (_colorType)
@@ -817,7 +826,7 @@ void Layout::setBackGroundColorOpacity(uint8_t opacity)
     }
 }
     
-uint8_t Layout::getBackGroundColorOpacity()const
+GLubyte Layout::getBackGroundColorOpacity()const
 {
     return _cOpacity;
 }
@@ -842,7 +851,7 @@ void Layout::setBackGroundImageColor(const Color3B &color)
     updateBackGroundImageColor();
 }
 
-void Layout::setBackGroundImageOpacity(uint8_t opacity)
+void Layout::setBackGroundImageOpacity(GLubyte opacity)
 {
     _backGroundImageOpacity = opacity;
     updateBackGroundImageOpacity();
@@ -853,7 +862,7 @@ const Color3B& Layout::getBackGroundImageColor()const
     return _backGroundImageColor;
 }
 
-uint8_t Layout::getBackGroundImageOpacity()const
+GLubyte Layout::getBackGroundImageOpacity()const
 {
     return _backGroundImageOpacity;
 }

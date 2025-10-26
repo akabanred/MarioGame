@@ -23,8 +23,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
+
+#include "platform/CCPlatformConfig.h"
+#if CC_TARGET_PLATFORM == CC_PLATFORM_MAC
+
 #import <Cocoa/Cocoa.h>
-#import <Metal/Metal.h>
 #include <algorithm>
 
 #include "platform/CCApplication.h"
@@ -32,7 +35,6 @@ THE SOFTWARE.
 #include "math/CCGeometry.h"
 #include "base/CCDirector.h"
 #include "base/ccUtils.h"
-#include "renderer/backend/metal/DeviceMTL.h"
 
 NS_CC_BEGIN
 
@@ -78,10 +80,20 @@ int Application::run()
     // Retain glview to avoid glview being released in the while loop
     glview->retain();
 
+    unsigned int ctx_updated_count = 0;
+
     while (!glview->windowShouldClose())
     {
         lastTime = getCurrentMillSecond();
-        
+
+        // hack to fix issue #19080, black screen on macOS 10.14
+        // stevetranby: look into doing this outside loop to get rid of condition test per frame
+        if(ctx_updated_count < 2) {
+            ctx_updated_count++;
+            NSOpenGLContext* ctx = (NSOpenGLContext*)glview->getNSGLContext();
+            [ctx update];
+        }
+
         director->mainLoop();
         glview->pollEvents();
 
@@ -136,6 +148,12 @@ Application* Application::getInstance()
     return sm_pSharedApplication;
 }
 
+// @deprecated Use getInstance() instead
+Application* Application::sharedApplication()
+{
+    return Application::getInstance();
+}
+
 const char * Application::getCurrentLanguageCode()
 {
     static char code[3]={0};
@@ -172,15 +190,35 @@ bool Application::openURL(const std::string &url)
     return [[NSWorkspace sharedWorkspace] openURL:nsUrl];
 }
 
+void Application::setResourceRootPath(const std::string& rootResDir)
+{
+    _resourceRootPath = rootResDir;
+    if (_resourceRootPath[_resourceRootPath.length() - 1] != '/')
+    {
+        _resourceRootPath += '/';
+    }
+    FileUtils* pFileUtils = FileUtils::getInstance();
+    std::vector<std::string> searchPaths = pFileUtils->getSearchPaths();
+    searchPaths.insert(searchPaths.begin(), _resourceRootPath);
+    pFileUtils->setSearchPaths(searchPaths);
+}
+
+const std::string& Application::getResourceRootPath(void)
+{
+    return _resourceRootPath;
+}
+
 void Application::setStartupScriptFilename(const std::string& startupScriptFile)
 {
     _startupScriptFilename = startupScriptFile;
     std::replace(_startupScriptFilename.begin(), _startupScriptFilename.end(), '\\', '/');
 }
 
-const std::string& Application::getStartupScriptFilename()
+const std::string& Application::getStartupScriptFilename(void)
 {
     return _startupScriptFilename;
 }
 
 NS_CC_END
+
+#endif // CC_TARGET_PLATFORM == CC_PLATFORM_MAC

@@ -58,12 +58,12 @@ public:
     /**
      * The x coordinate.
      */
-    float x = 0.f;
+    float x;
 
     /**
      * The y coordinate.
      */
-    float y = 0.f;
+    float y;
 
     /**
      * Constructs a new vector initialized to all zeros.

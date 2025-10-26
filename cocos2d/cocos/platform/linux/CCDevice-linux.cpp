@@ -23,6 +23,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
+
+#include "platform/CCPlatformConfig.h"
+#if CC_TARGET_PLATFORM == CC_PLATFORM_LINUX
+
 #include "platform/CCDevice.h"
 #include "platform/CCFileUtils.h"
 
@@ -30,6 +34,7 @@ THE SOFTWARE.
 #include <stdio.h>
 
 #include <algorithm>
+#include <cmath>
 #include <vector>
 #include <map>
 #include <string>
@@ -94,7 +99,7 @@ int Device::getDPI()
          */
         double xres = ((((double) DisplayWidth(dpy,scr)) * 25.4) / 
             ((double) DisplayWidthMM(dpy,scr)));
-        dpi = (int) (xres + 0.5);
+        dpi = std::lround(xres);
         //printf("dpi = %d\n", dpi);
         XCloseDisplay (dpy);
     }
@@ -345,7 +350,7 @@ public:
         std::string lowerCasePath = fontPath;
         std::transform(lowerCasePath.begin(), lowerCasePath.end(), lowerCasePath.begin(), ::tolower);
         if ( lowerCasePath.find(".ttf") != std::string::npos ) {
-            fontPath = cocos2d::FileUtils::getInstance()->fullPathForFilename(fontPath.c_str());
+            fontPath = cocos2d::FileUtils::getInstance()->fullPathForFilename(fontPath);
 
             FILE *f = fopen(fontPath.c_str(), "r");
             if ( f ) {
@@ -515,3 +520,5 @@ void Device::vibrate(float /*duration*/)
 }
 
 NS_CC_END
+
+#endif // CC_TARGET_PLATFORM == CC_PLATFORM_LINUX

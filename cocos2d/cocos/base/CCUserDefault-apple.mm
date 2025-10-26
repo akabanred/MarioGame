@@ -493,6 +493,18 @@ void UserDefault::destroyInstance()
     CC_SAFE_DELETE(_userDefault);
 }
 
+// FIXME:: deprecated
+UserDefault* UserDefault::sharedUserDefault()
+{
+    return UserDefault::getInstance();
+}
+
+// FIXME:: deprecated
+void UserDefault::purgeSharedUserDefault()
+{
+    UserDefault::destroyInstance();
+}
+
 bool UserDefault::isXMLFileExist()
 {
     return FileUtils::getInstance()->isFileExist(_filePath);

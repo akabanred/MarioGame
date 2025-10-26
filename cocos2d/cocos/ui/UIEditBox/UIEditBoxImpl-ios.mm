@@ -149,7 +149,7 @@ NSString* removeSiriString(NSString* str)
     return [str stringByReplacingOccurrencesOfString:siriString withString:@""];
 }
 
-const char* EditBoxImplIOS::getText()
+const char* EditBoxImplIOS::getText(void)
 {
     return [removeSiriString(_systemControl.text) UTF8String];
 }

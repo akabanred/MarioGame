@@ -31,8 +31,6 @@
 #include "base/ccTypes.h"
 #include "base/ccConfig.h"
 #include "renderer/CCCustomCommand.h"
-#include "renderer/backend/ProgramState.h"
-#include "renderer/backend/Types.h"
 
 #if CC_USE_3D_PHYSICS
 
@@ -46,6 +44,7 @@ NS_CC_BEGIN
  * @{
  */
 
+class GLProgram;
 class Renderer;
 
 /** @brief Physics3DDebugDrawer: debug draw the physics object, used by Physics3DWorld */
@@ -71,8 +70,8 @@ public:
 protected:
 
     void init();
-    void onBeforeDraw();
-    void onAfterDraw();
+    void ensureCapacity(int count);
+    void drawImplementation(const cocos2d::Mat4 &transform, uint32_t flags);
 
 protected:
 
@@ -82,18 +81,19 @@ protected:
         cocos2d::Vec4 color;
     };
 
-    std::vector<V3F_V4F>                _buffer;
-    cocos2d::backend::UniformLocation   _locMVP;
+    GLuint      _vao;
+    GLuint      _vbo;
 
-    cocos2d::BlendFunc                  _blendFunc      = BlendFunc::DISABLE;
-    cocos2d::CustomCommand              _customCommand;
-    cocos2d::backend::ProgramState *    _programState   = nullptr;
+    int         _bufferCapacity;
+    GLsizei     _bufferCount;
+    V3F_V4F*    _buffer;
 
-    bool                                _dirty          = true;
-    int                                 _debugMode      = DBG_DrawWireframe | DBG_DrawConstraints | DBG_DrawConstraintLimits;
+    cocos2d::BlendFunc   _blendFunc;
+    cocos2d::CustomCommand _customCommand;
+    cocos2d::GLProgram *_program;
 
-private:
-    bool                                _oldDepthTestEnabled    = false;
+    bool        _dirty;
+    int _debugMode;
 };
 
 // end of 3d group

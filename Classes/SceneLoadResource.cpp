@@ -4,66 +4,90 @@
 
 
 bool SceneLoadResource::init() {
-	Scene::init();
-	
-	copyResourceFileNameToClassMember();
-	
-	//¼ÓÔØ±³¾°
-	Sprite* bg = Sprite::create(IMAGE_bg);
-	bg->setPosition(center);
-	bg->setScale(winSize.height/bg->getBoundingBox().size.height);
-	addChild(bg);
+    if (!Scene::init()) return false;
 
-	//½ø¶ÈÌõ±³¾°
-	auto  bar_bg = Sprite::create(IMAGE_sliderTrack);
-	bar_bg->setPosition(center);
-	addChild(bar_bg);
+    // reset bá»™ Ä‘áº¿m
+    _loadFileCount = 0;
+    _allFineNum = 0;
 
-	auto timer_spr = Sprite::create(IMAGE_sliderProgress);
+    copyResourceFileNameToClassMember();
 
-	//¼ÓÔØ½ø¶ÈÌõ
-	_bar = ProgressTimer::create(timer_spr);
-	addChild(_bar);
+    CCLOG("[LoadRes] init: pic=%u, sfx=%u",
+          (unsigned)_picfiles.size(),
+          (unsigned)_musicfiles.size());
 
-	_bar->setPosition(center);
-	_bar->setPercentage(0);
-	_bar->setType(ProgressTimer::Type::BAR);
-	_bar->setMidpoint(Vec2(0,0));
-	_bar->setBarChangeRate(Vec2(1,0));
-	
-	return true;
+    // BG
+    Sprite* bg = Sprite::create(IMAGE_bg);
+    if (!bg) CCLOGERROR("[LoadRes] Cannot load %s", IMAGE_bg);
+    bg->setPosition(center);
+    bg->setScale(winSize.height / bg->getBoundingBox().size.height);
+    addChild(bg);
+
+    // progress bg
+    auto bar_bg = Sprite::create(IMAGE_sliderTrack);
+    if (!bar_bg) CCLOGERROR("[LoadRes] Cannot load %s", IMAGE_sliderTrack);
+    bar_bg->setPosition(center);
+    addChild(bar_bg);
+
+    auto timer_spr = Sprite::create(IMAGE_sliderProgress);
+    if (!timer_spr) CCLOGERROR("[LoadRes] Cannot load %s", IMAGE_sliderProgress);
+
+    // progress
+    _bar = ProgressTimer::create(timer_spr);
+    addChild(_bar);
+    _bar->setPosition(center);
+    _bar->setPercentage(0);
+    _bar->setType(ProgressTimer::Type::BAR);
+    _bar->setMidpoint(Vec2(0, 0));
+    _bar->setBarChangeRate(Vec2(1, 0));
+
+    return true;
 }
 
 void SceneLoadResource::onEnter() {
-	Scene::onEnter();
+    Scene::onEnter();
 
-	
-	_allFineNum = _picfiles.size() + _musicfiles.size();;
-	auto textur_cache = Director::getInstance()->getTextureCache();
+    auto* texCache = Director::getInstance()->getTextureCache();
 
-	for (int i = 0; i < _musicfiles.size(); ++i) {
+    _allFineNum = (int)_picfiles.size() + (int)_musicfiles.size();
+    CCLOG("[LoadRes] onEnter: all=%d (pic=%u, sfx=%u)",
+          _allFineNum, (unsigned)_picfiles.size(), (unsigned)_musicfiles.size());
 
-		CocosDenshion::SimpleAudioEngine::getInstance()->preloadEffect(_musicfiles[i]);
+    if (_allFineNum == 0) {
+        CCLOG("[LoadRes] Nothing to load -> go SceneStart");
+        Director::getInstance()->replaceScene(SceneStart::create());
+        return;
+    }
 
-	}
-	_loadFileCount += _musicfiles.size();
+    // preload SFX (Ä‘á»“ng bá»™)
+    for (auto& f : _musicfiles) {
+        CocosDenshion::SimpleAudioEngine::getInstance()->preloadEffect(f);
+        ++_loadFileCount;
+        CCLOG("[LoadRes] SFX loaded: %s (%d/%d)", f, _loadFileCount, _allFineNum);
+    }
+    _bar->setPercentage(_loadFileCount * 100.0f / std::max(1, _allFineNum));
 
-	for (int i = 0; i < _picfiles.size(); ++i) {
-
-		textur_cache->addImageAsync(_picfiles[i], [&](Texture2D*){
-			++_loadFileCount;
-			_bar->setPercentage(_loadFileCount*100 / _allFineNum);
-			
-			if (_loadFileCount == _allFineNum) {
-				//¼ÓÔØÍê³É£¬Ìø½ø¿ªÊ¼ÓÎÏ·²Ëµ¥
-				
-				Director::getInstance()->replaceScene(SceneStart::create());
-			}
-		});
-	}
-	
+    // load áº£nh (báº¥t Ä‘á»“ng bá»™)
+    // TrÆ°á»›c khi load (enqueue)
+for (auto& f : _picfiles) {
+    CCLOG("[LoadRes] queue image: %s", f);   // <-- dÃ¹ng f, KHÃ”NG f.c_str()
+    Director::getInstance()->getTextureCache()->addImageAsync(f, [this, f](Texture2D* tex) {
+        if (!tex) {
+            CCLOGERROR("[LoadRes] addImageAsync FAILED: %s", f);  // <-- f
+        } else {
+            CCLOG("[LoadRes] image loaded: %s", f);               // <-- f
+        }
+        ++_loadFileCount;
+        _bar->setPercentage(_loadFileCount * 100.0f / std::max(1, _allFineNum));
+        if (_loadFileCount >= _allFineNum) {
+            CCLOG("[LoadRes] ALL DONE -> SceneStart");
+            Director::getInstance()->replaceScene(SceneStart::create());
+        }
+    });
+}
 
 }
+
 
 void SceneLoadResource::copyResourceFileNameToClassMember(){
 	
@@ -198,4 +222,5 @@ void SceneLoadResource::copyResourceFileNameToClassMember(){
 	for (auto musicFileName : musicfiles){
 		_musicfiles.push_back(musicFileName);
 	}
+	CCLOG("[LoadRes] push %u pics, %u sfx", (unsigned)_picfiles.size(), (unsigned)_musicfiles.size());
 }

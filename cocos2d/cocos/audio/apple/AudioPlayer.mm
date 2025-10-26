@@ -25,6 +25,9 @@
 
 #define LOG_TAG "AudioPlayer"
 
+#include "platform/CCPlatformConfig.h"
+#if CC_TARGET_PLATFORM == CC_PLATFORM_IOS || CC_TARGET_PLATFORM == CC_PLATFORM_MAC
+
 #import <Foundation/Foundation.h>
 
 #include "audio/apple/AudioPlayer.h"
@@ -39,6 +42,7 @@
 #endif
 
 using namespace cocos2d;
+using namespace cocos2d::experimental;
 
 namespace {
 unsigned int __idIndex = 0;
@@ -367,3 +371,5 @@ bool AudioPlayer::setTime(float time)
     }
     return false;
 }
+
+#endif

@@ -296,6 +296,11 @@ Vec2 PhysicsShape::getPolygonCenter(const Vec2* points, int count)
     return PhysicsHelper::cpv2point(center);
 }
 
+Vec2 PhysicsShape::getPolyonCenter(const Vec2* points, int count)
+{
+    return getPolygonCenter(points, count);
+}
+
 void PhysicsShape::setBody(PhysicsBody *body)
 {
     // already added

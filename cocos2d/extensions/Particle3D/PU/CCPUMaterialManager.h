@@ -52,7 +52,7 @@ public:
     bool depthWrite;
 
     std::string textureFile;
-    backend::SamplerAddressMode wrapMode;
+    GLuint wrapMode;
 };
 
 class CC_DLL PUMaterialCache

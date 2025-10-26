@@ -23,6 +23,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
+
+#include "platform/CCPlatformConfig.h"
+#if CC_TARGET_PLATFORM == CC_PLATFORM_MAC
+
 #include "platform/CCCommon.h"
 
 #include "base/CCDirector.h"
@@ -48,11 +52,16 @@ void ccMessageBox(const char * msg, const char * title)
     [alert addButtonWithTitle:@"OK"];
     [alert setMessageText:tmpMsg];
     [alert setInformativeText:tmpTitle];
-    [alert setAlertStyle:NSAlertStyleWarning];
+    [alert setAlertStyle:NSWarningAlertStyle];
 
     auto glview = Director::getInstance()->getOpenGLView();
     id window = glview->getCocoaWindow();
-    [alert beginSheetModalForWindow:window completionHandler:nil];
+    [alert beginSheetModalForWindow:window
+                      modalDelegate:[window delegate]
+                     didEndSelector:nil
+                        contextInfo:nil];
 }
 
 NS_CC_END
+
+#endif // CC_TARGET_PLATFORM == CC_PLATFORM_MAC

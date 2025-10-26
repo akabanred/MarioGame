@@ -33,7 +33,7 @@ THE SOFTWARE.
 #include <memory>
 #include <condition_variable>
 
-namespace cocos2d {
+namespace cocos2d { namespace experimental {
 // Manage PcmAudioPlayer& UrlAudioPlayer
 
 class PcmAudioPlayer;
@@ -124,5 +124,5 @@ private:
     ThreadPool* _threadPool;
 };
 
-} // namespace cocos2d {
+}} // namespace cocos2d { namespace experimental {
 

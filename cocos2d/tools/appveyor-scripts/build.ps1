@@ -62,7 +62,7 @@ If ($env:build_type -eq "android_cpp_tests") {
     Push-Location $env:APPVEYOR_BUILD_FOLDER\tests\lua-tests\project\proj.android\
     # tocheck, release mode failed on "LuaTests:mergeReleaseAssets"
     Retry-Command -ScriptBlock {
-        & ./gradlew assembleDebug -PPROP_BUILD_TYPE=cmake --parallel --info
+        & ./gradlew assembleDebug -PPROP_BUILD_TYPE=ndk-build --parallel --info
     } -Maximum 5
 
     if ($lastexitcode -ne 0) {throw}
@@ -102,8 +102,6 @@ If ($env:build_type -eq "android_cpp_tests") {
 } elseif ($env:build_type -eq "windows32_cmake_test") {
     Write-Host "Build tests project by cmake"
 
-    $ENV:PATH="$env:APPVEYOR_BUILD_FOLDER\tools\cocos2d-console\bin;$ENV:PATH"
-
     & mkdir $env:APPVEYOR_BUILD_FOLDER\win32-build
     # if ($lastexitcode -ne 0) {throw} # mkdir return no-zero
 
@@ -121,4 +119,12 @@ If ($env:build_type -eq "android_cpp_tests") {
     Pop-Location
 }
 Else {
+    # default, windows32_sln_test
+    & msbuild $env:APPVEYOR_BUILD_FOLDER\build\cocos2d-win32.sln /t:Build /p:Platform="Win32" /p:Configuration="Release" /m /consoleloggerparameters:"PerformanceSummary;NoSummary"
+
+    if ($lastexitcode -ne 0) {throw}
+    & 7z a release_win32.7z $env:APPVEYOR_BUILD_FOLDER\build\Release.win32\
+    if ($lastexitcode -ne 0) {throw}
+
+    Push-AppveyorArtifact release_win32.7z
 }

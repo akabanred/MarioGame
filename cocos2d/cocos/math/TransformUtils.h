@@ -28,6 +28,8 @@ THE SOFTWARE.
 #ifndef __SUPPORT_TRANSFORM_UTILS_H__
 #define __SUPPORT_TRANSFORM_UTILS_H__
 
+// TODO: when in MAC or windows, it includes <OpenGL/gl.h>
+#include "platform/CCGL.h"
 #include "base/ccMacros.h"
 
 /**
@@ -43,8 +45,8 @@ struct AffineTransform;
  @param m The Mat4*4 pointer.
  @param t Affine transform.
  */
-CC_DLL void CGAffineToGL(const AffineTransform &t, float *m);
-CC_DLL void GLToCGAffine(const float *m, AffineTransform *t);
+CC_DLL void CGAffineToGL(const AffineTransform &t, GLfloat *m);
+CC_DLL void GLToCGAffine(const GLfloat *m, AffineTransform *t);
 /**@}*/
 }//namespace   cocos2d 
 /**

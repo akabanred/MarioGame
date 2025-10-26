@@ -30,7 +30,9 @@
 #include "renderer/CCMeshCommand.h"
 #include "renderer/CCRenderer.h"
 #include "renderer/CCTextureCache.h"
-#include "renderer/backend/ProgramState.h"
+#include "renderer/CCGLProgramState.h"
+#include "renderer/CCGLProgramCache.h"
+#include "renderer/CCVertexIndexBuffer.h"
 #include "2d/CCCamera.h"
 #include "3d/CCSprite3D.h"
 

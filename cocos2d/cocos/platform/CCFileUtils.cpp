@@ -547,8 +547,7 @@ void FileUtils::destroyInstance()
 
 void FileUtils::setDelegate(FileUtils *delegate)
 {
-    if (s_sharedFileUtils)
-        delete s_sharedFileUtils;
+    delete s_sharedFileUtils;
 
     s_sharedFileUtils = delegate;
 }
@@ -616,7 +615,7 @@ bool FileUtils::init()
 {
     DECLARE_GUARD;
     _searchPathArray.push_back(_defaultResRootPath);
-    _searchResolutionsOrderArray.push_back("");
+    _searchResolutionsOrderArray.emplace_back("");
     return true;
 }
 
@@ -697,6 +696,20 @@ FileUtils::Status FileUtils::getContents(const std::string& filename, ResizableB
     }
 
     return Status::OK;
+}
+
+unsigned char* FileUtils::getFileData(const std::string& filename, const char* mode, ssize_t *size) const
+{
+    CCASSERT(!filename.empty() && size != nullptr && mode != nullptr, "Invalid parameters.");
+    (void)(mode); // mode is unused, as we do not support text mode any more...
+
+    Data d;
+    if (getContents(filename, &d) != Status::OK) {
+        *size = 0;
+        return nullptr;
+    }
+
+    return d.takeBuffer(size);
 }
 
 unsigned char* FileUtils::getFileDataFromZip(const std::string& zipFilePath, const std::string& filename, ssize_t *size) const
@@ -929,7 +942,7 @@ void FileUtils::setSearchResolutionsOrder(const std::vector<std::string>& search
     for(const auto& iter : searchResolutionsOrder)
     {
         std::string resolutionDirectory = iter;
-        if (!existDefault && resolutionDirectory == "")
+        if (!existDefault && resolutionDirectory.empty())
         {
             existDefault = true;
         }
@@ -944,7 +957,7 @@ void FileUtils::setSearchResolutionsOrder(const std::vector<std::string>& search
 
     if (!existDefault)
     {
-        _searchResolutionsOrderArray.push_back("");
+        _searchResolutionsOrderArray.emplace_back("");
     }
 }
 
@@ -1104,7 +1117,7 @@ std::string FileUtils::getFullPathForFilenameWithinDirectory(const std::string& 
 {
     // get directory+filename, safely adding '/' as necessary
     std::string ret = directory;
-    if (directory.size() && directory[directory.size()-1] != '/'){
+    if (!directory.empty() && directory[directory.size()-1] != '/'){
         ret += '/';
     }
     ret += filename;
@@ -1230,7 +1243,7 @@ void FileUtils::listFilesRecursivelyAsync(const std::string& dirPath, std::funct
     }, std::move(callback));
 }
 
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) || (CC_TARGET_PLATFORM == CC_PLATFORM_WINRT)
 // windows os implement should override in platform specific FileUtiles class
 bool FileUtils::isDirectoryExistInternal(const std::string& dirPath) const
 {

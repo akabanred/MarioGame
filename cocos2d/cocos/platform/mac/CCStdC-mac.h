@@ -23,7 +23,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
-#pragma once
+
+#ifndef __CC_STD_C_H__
+#define __CC_STD_C_H__
+
+#include "platform/CCPlatformConfig.h"
+#if CC_TARGET_PLATFORM == CC_PLATFORM_MAC
 
 #include "platform/CCPlatformMacros.h"
 #include <float.h>
@@ -43,3 +48,7 @@ THE SOFTWARE.
 #ifndef MAX
 #define MAX(x,y) (((x) < (y)) ? (y) : (x))
 #endif  // MAX
+
+#endif // CC_TARGET_PLATFORM == CC_PLATFORM_MAC
+
+#endif  // __CC_STD_C_H__

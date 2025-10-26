@@ -27,7 +27,8 @@ public:
 		IT_fire_string,
 		IT_boss,
 		IT_bullet,
-		IT_BridgeStartPos
+		IT_BridgeStartPos,
+		IT_BOSS, 
 	};
 	
 	static Item* create(ValueMap &map);

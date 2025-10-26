@@ -25,12 +25,15 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
-#pragma once
+#ifndef __CC_FAST_TMX_LAYER_H__
+#define __CC_FAST_TMX_LAYER_H__
 
+#include <map>
 #include <unordered_map>
 #include "2d/CCNode.h"
 #include "2d/CCTMXXMLParser.h"
-#include "renderer/CCCustomCommand.h"
+#include "renderer/CCPrimitiveCommand.h"
+#include "base/CCMap.h"
 
 NS_CC_BEGIN
 
@@ -39,11 +42,9 @@ class TMXLayerInfo;
 class TMXTilesetInfo;
 class Texture2D;
 class Sprite;
+struct _ccCArray;
 
-namespace backend
-{
-    class Buffer;
-}
+namespace experimental{
 
 /**
  * @addtogroup _2d
@@ -76,14 +77,9 @@ namespace backend
  * @js NA
  */
 
-class CC_DLL FastTMXLayer : public Node
+class CC_DLL TMXLayer : public Node
 {
 public:
-    /** Possible orientations of the TMX map */
-    static const int FAST_TMX_ORIENTATION_ORTHO;
-    static const int FAST_TMX_ORIENTATION_HEX;
-    static const int FAST_TMX_ORIENTATION_ISO;
-
     /** Creates a FastTMXLayer with an tileset info, a layer info and a map info.
      *
      * @param tilesetInfo An tileset info.
@@ -91,16 +87,16 @@ public:
      * @param mapInfo A map info.
      * @return Return an autorelease object.
      */
-    static FastTMXLayer * create(TMXTilesetInfo *tilesetInfo, TMXLayerInfo *layerInfo, TMXMapInfo *mapInfo);
+    static TMXLayer * create(TMXTilesetInfo *tilesetInfo, TMXLayerInfo *layerInfo, TMXMapInfo *mapInfo);
     /**
      * @js ctor
      */
-    FastTMXLayer();
+    TMXLayer();
     /**
      * @js NA
      * @lua NA
      */
-    virtual ~FastTMXLayer();
+    virtual ~TMXLayer();
 
     /** Returns the tile gid at a given tile coordinate. It also returns the tile flags.
      * 
@@ -276,7 +272,6 @@ public:
     void removeChild(Node* child, bool cleanup = true) override;
 
 protected:
-    virtual void setOpacity(uint8_t opacity) override;
 
     bool initWithTilesetInfo(TMXTilesetInfo *tilesetInfo, TMXLayerInfo *layerInfo, TMXMapInfo *mapInfo);
     void updateTiles(const Rect& culledRect);
@@ -296,12 +291,16 @@ protected:
     //
     void updateTotalQuads();
     
+    void onDraw(Primitive* primitive);
     int getTileIndexByPos(int x, int y) const { return x + y * (int) _layerSize.width; }
     
     void updateVertexBuffer();
     void updateIndexBuffer();
     void updatePrimitives();
 
+    virtual void setOpacity(GLubyte opacity) override;
+protected:
+    
     //! name of the layer
     std::string _layerName;
 
@@ -310,52 +309,62 @@ protected:
     /** size of the map's tile (could be different from the tile's size) */
     Size _mapTileSize;
     /** pointer to the map of tiles */
-    uint32_t* _tiles = nullptr;
+    uint32_t* _tiles;
     /** Tileset information for the layer */
-    TMXTilesetInfo* _tileSet = nullptr;
+    TMXTilesetInfo* _tileSet;
     /** Layer orientation, which is the same as the map orientation */
-    int _layerOrientation = FAST_TMX_ORIENTATION_ORTHO;
+    int _layerOrientation;
     /** properties from the layer. They can be added using Tiled */
     ValueMap _properties;
 
-    Texture2D *_texture = nullptr;
+    Texture2D *_texture;
     
     /** container for sprite children. map<index, pair<sprite, gid> > */
     std::map<int, std::pair<Sprite*, int> > _spriteContainer;
 
+    //GLuint _buffersVBO; //0: vertex, 1: indices
+
     Size _screenGridSize;
     Rect _screenGridRect;
-    int _screenTileCount = 0;
+    int _screenTileCount;
     
-    int _vertexZvalue = 0;
-    bool _useAutomaticVertexZ = false;
+    int _vertexZvalue;
+    bool _useAutomaticVertexZ;
     
     /** tile coordinate to node coordinate transform */
     Mat4 _tileToNodeTransform;
     /** data for rendering */
-    bool _quadsDirty = true;
+    bool _quadsDirty;
     std::vector<int> _tileToQuadIndex;
     std::vector<V3F_C4B_T2F_Quad> _totalQuads;
 #ifdef CC_FAST_TILEMAP_32_BIT_INDICES
-    std::vector<unsigned int> _indices;
+    std::vector<GLuint> _indices;
 #else
-    std::vector<unsigned short> _indices;
+    std::vector<GLushort> _indices;
 #endif
     std::map<int/*vertexZ*/, int/*offset to _indices by quads*/> _indicesVertexZOffsets;
     std::unordered_map<int/*vertexZ*/, int/*number to quads*/> _indicesVertexZNumber;
-    bool _dirty = true;
+    std::vector<PrimitiveCommand> _renderCommands;
+    bool _dirty;
     
-    backend::Buffer* _vertexBuffer = nullptr;
-    backend::Buffer* _indexBuffer = nullptr;
-
-    float _alphaFuncValue = 0.f;
-    std::unordered_map<int, CustomCommand*> _customCommands;
+    VertexBuffer* _vertexBuffer;
     
-    backend::UniformLocation _mvpMatrixLocaiton;
-    backend::UniformLocation _textureLocation;
-    backend::UniformLocation _alphaValueLocation;
+    VertexData* _vData;
+    
+    IndexBuffer* _indexBuffer;
+    
+    Map<int , Primitive*> _primitives;
+    
+public:
+    /** Possible orientations of the TMX map */
+    static const int FAST_TMX_ORIENTATION_ORTHO;
+    static const int FAST_TMX_ORIENTATION_HEX;
+    static const int FAST_TMX_ORIENTATION_ISO;
 };
 
 // end of tilemap_parallax_nodes group
 /// @}
+} //end of namespace experimental
 NS_CC_END
+
+#endif //__CCTMX_LAYER2_H__

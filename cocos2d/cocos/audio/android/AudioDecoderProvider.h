@@ -27,7 +27,7 @@ THE SOFTWARE.
 
 #include "audio/android/OpenSLHelper.h"
 
-namespace cocos2d {
+namespace cocos2d { namespace experimental {
 
 class AudioDecoder;
 
@@ -38,4 +38,4 @@ public:
     static void destroyAudioDecoder(AudioDecoder** decoder);
 };
 
-} // namespace cocos2d {
+}} // namespace cocos2d { namespace experimental {

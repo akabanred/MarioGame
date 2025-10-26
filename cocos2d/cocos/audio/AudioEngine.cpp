@@ -37,8 +37,12 @@
 #include "audio/apple/AudioEngine-inl.h"
 #elif CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
 #include "audio/win32/AudioEngine-win32.h"
+#elif CC_TARGET_PLATFORM == CC_PLATFORM_WINRT
+#include "audio/winrt/AudioEngine-winrt.h"
 #elif CC_TARGET_PLATFORM == CC_PLATFORM_LINUX
 #include "audio/linux/AudioEngine-linux.h"
+#elif CC_TARGET_PLATFORM == CC_PLATFORM_TIZEN
+#include "audio/tizen/AudioEngine-tizen.h"
 #endif
 
 #define TIME_DELAY_PRECISION 0.0001
@@ -48,6 +52,7 @@
 #endif // ERROR
 
 using namespace cocos2d;
+using namespace cocos2d::experimental;
 
 const int AudioEngine::INVALID_AUDIO_ID = -1;
 const float AudioEngine::TIME_UNKNOWN = -1.0f;
@@ -65,7 +70,8 @@ AudioEngine::AudioEngineThreadPool* AudioEngine::s_threadPool = nullptr;
 bool AudioEngine::_isEnabled = true;
 
 AudioEngine::AudioInfo::AudioInfo()
-: profileHelper(nullptr)
+: filePath(nullptr)
+, profileHelper(nullptr)
 , volume(1.0f)
 , loop(false)
 , duration(TIME_UNKNOWN)
@@ -133,8 +139,9 @@ private:
                 }
             }
 
-            if (task)
+            if (task) {
                 task();
+            }
         }
     }
 
@@ -240,7 +247,7 @@ int AudioEngine::play2d(const std::string& filePath, bool loop, float volume, co
             auto& audioRef = _audioIDInfoMap[ret];
             audioRef.volume = volume;
             audioRef.loop = loop;
-            audioRef.filePath = it->first;
+            audioRef.filePath = &it->first;
 
             if (profileHelper) {
                 profileHelper->lastPlayTime = utils::gettime();
@@ -341,7 +348,7 @@ void AudioEngine::remove(int audioID)
         if (it->second.profileHelper) {
             it->second.profileHelper->audioIDs.remove(audioID);
         }
-        _audioPathIDMap[it->second.filePath].remove(audioID);
+        _audioPathIDMap[*it->second.filePath].remove(audioID);
         _audioIDInfoMap.erase(it);
     }
 }
@@ -523,7 +530,7 @@ AudioProfile* AudioEngine::getProfile(const std::string &name)
     }
 }
 
-void AudioEngine::preload(const std::string& filePath, std::function<void(bool isSuccess)> callback)
+void AudioEngine::preload(const std::string& filePath, const std::function<void(bool isSuccess)>& callback)
 {
     if (!isEnabled())
     {

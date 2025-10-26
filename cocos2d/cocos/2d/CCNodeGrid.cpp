@@ -22,6 +22,7 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
+
 #include "2d/CCNodeGrid.h"
 #include "2d/CCGrid.h"
 #include "renderer/CCRenderer.h"
@@ -52,7 +53,11 @@ NodeGrid* NodeGrid::create(const cocos2d::Rect &rect)
 }
 
 NodeGrid::NodeGrid()
+: _gridTarget(nullptr)
+, _nodeGrid(nullptr)
+, _gridRect(Rect::ZERO)
 {
+
 }
 
 void NodeGrid::setTarget(Node* target)
@@ -106,6 +111,10 @@ void NodeGrid::visit(Renderer *renderer, const Mat4 &parentTransform, uint32_t p
     if(dirty)
         _modelViewTransform = this->transform(parentTransform);
     _transformUpdated = false;
+    
+    _groupCommand.init(_globalZOrder);
+    renderer->addCommand(&_groupCommand);
+    renderer->pushGroup(_groupCommand.getRenderQueueID());
 
     // IMPORTANT:
     // To ease the migration to v3.0, we still support the Mat4 stack,
@@ -123,7 +132,10 @@ void NodeGrid::visit(Renderer *renderer, const Mat4 &parentTransform, uint32_t p
         _nodeGrid->set2DProjection();
     }
 
-    onGridBeginDraw();
+    _gridBeginCommand.init(_globalZOrder);
+    _gridBeginCommand.func = CC_CALLBACK_0(NodeGrid::onGridBeginDraw, this);
+    renderer->addCommand(&_gridBeginCommand);
+
 
     if(_gridTarget)
     {
@@ -169,8 +181,12 @@ void NodeGrid::visit(Renderer *renderer, const Mat4 &parentTransform, uint32_t p
         director->setProjection(beforeProjectionType);
     }
 
-    onGridEndDraw();
+    _gridEndCommand.init(_globalZOrder);
+    _gridEndCommand.func = CC_CALLBACK_0(NodeGrid::onGridEndDraw, this);
+    renderer->addCommand(&_gridEndCommand);
 
+    renderer->popGroup();
+ 
     director->popMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_MODELVIEW);
 }
 

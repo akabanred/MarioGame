@@ -23,12 +23,11 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
-#pragma once
-
+#ifndef StencilStateManager_hpp
+#define StencilStateManager_hpp
 #include "base/ccConfig.h"
 #include "platform/CCPlatformMacros.h"
-#include "renderer/CCCustomCommand.h"
-#include "renderer/CCCallbackCommand.h"
+#include "platform/CCGL.h"
 
 /**
  * @addtogroup base
@@ -40,51 +39,42 @@ class CC_DLL StencilStateManager
 {
 public:
     StencilStateManager();
-    ~StencilStateManager();
-    void onBeforeVisit(float globalZOrder);
+    void onBeforeVisit();
     void onAfterDrawStencil();
     void onAfterVisit();
-    void setAlphaThreshold(float alphaThreshold);
+    void setAlphaThreshold(GLfloat alphaThreshold);
     void setInverted(bool inverted);
     bool isInverted()const;
-    float getAlphaThreshold()const;
-
+    GLfloat getAlphaThreshold()const;
 private:
     CC_DISALLOW_COPY_AND_ASSIGN(StencilStateManager);
-    static int s_layer;
+    static GLint s_layer;
     /**draw fullscreen quad to clear stencil bits
      */
-    void drawFullScreenQuadClearStencil(float globalZOrder);
+    void drawFullScreenQuadClearStencil();
     
-    void updateLayerMask();
-    void onBeforeDrawQuadCmd();
-    void onAfterDrawQuadCmd();
     
-    float _alphaThreshold = 1.f;
-    bool _inverted = false;
+    GLfloat _alphaThreshold;
+    bool    _inverted;
     
-    bool _currentStencilEnabled = false;
-    unsigned int _currentStencilWriteMask = ~0;
-    backend::CompareFunction _currentStencilFunc = backend::CompareFunction::ALWAYS;
-    unsigned int _currentStencilRef = 0;
-    unsigned int _currentStencilReadMask = ~0;
-    backend::StencilOperation _currentStencilFail = backend::StencilOperation::KEEP;
-    backend::StencilOperation _currentStencilPassDepthFail = backend::StencilOperation::KEEP;
-    backend::StencilOperation _currentStencilPassDepthPass = backend::StencilOperation::KEEP;
-    bool _currentDepthWriteMask = true;
-
-    unsigned int _mask_layer_le = 0;
-    int _currentLayerMask = 0;
-
-    CustomCommand _customCommand;
-    CallbackCommand _afterDrawStencilCmd;
-    CallbackCommand _afterVisitCmd;
+    GLboolean _currentStencilEnabled;
+    GLuint _currentStencilWriteMask;
+    GLenum _currentStencilFunc;
+    GLint _currentStencilRef;
+    GLuint _currentStencilValueMask;
+    GLenum _currentStencilFail;
+    GLenum _currentStencilPassDepthFail;
+    GLenum _currentStencilPassDepthPass;
+    GLboolean _currentDepthWriteMask;
     
-    backend::UniformLocation _mvpMatrixLocaiton;
-    backend::UniformLocation _colorUniformLocation;
-    backend::ProgramState* _programState = nullptr;
+    GLboolean _currentAlphaTestEnabled;
+    GLenum _currentAlphaTestFunc;
+    GLclampf _currentAlphaTestRef;
+    
+    GLint _mask_layer_le;
 };
 
 NS_CC_END
 // end of base group
 /** @} */
+#endif /* StencilStateManager_hpp */

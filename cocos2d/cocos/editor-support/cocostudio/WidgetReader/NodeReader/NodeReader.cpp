@@ -93,7 +93,7 @@ namespace cocostudio
         Vec2 rotationSkew;
         int zOrder = 0;
         bool visible = true;
-        uint8_t alpha = 255;
+        GLubyte alpha = 255;
         int tag = 0;
         Vec2 position;
         Vec2 scale(1.0f, 1.0f);

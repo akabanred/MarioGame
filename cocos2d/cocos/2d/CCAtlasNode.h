@@ -25,7 +25,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
-#pragma once
+
+#ifndef __CCATLAS_NODE_H__
+#define __CCATLAS_NODE_H__
 
 #include "2d/CCNode.h"
 #include "base/CCProtocols.h"
@@ -64,29 +66,6 @@ public:
     */
     virtual void updateAtlasValues();
     
-    // Overrides
-    virtual void draw(Renderer *renderer, const Mat4 &transform, uint32_t flags) override;
-    virtual Texture2D* getTexture() const override;
-    virtual void setTexture(Texture2D *texture) override;
-    virtual bool isOpacityModifyRGB() const override;
-    virtual void setOpacityModifyRGB(bool isOpacityModifyRGB) override;
-    virtual const Color3B& getColor() const override;
-    virtual void setColor(const Color3B& color) override;
-    virtual void setOpacity(uint8_t opacity) override;
-    
-    /**
-     * @code
-     * When this function bound into js or lua,the parameter will be changed
-     * In js: var setBlendFunc(var src, var dst)
-     * @endcode
-     * @lua NA
-     */
-    virtual void setBlendFunc(const BlendFunc& blendFunc) override;
-    /**
-     * @lua NA
-     */
-    virtual const BlendFunc& getBlendFunc() const override;
-    
     /** Set an buffer manager of the texture vertex. */
     void setTextureAtlas(TextureAtlas* textureAtlas);
     
@@ -97,7 +76,30 @@ public:
     TextureAtlas* getTextureAtlas() const;
     
     void setQuadsToDraw(ssize_t quadsToDraw);
-    size_t getQuadsToDraw() const;
+    ssize_t getQuadsToDraw() const;
+
+    
+    // Overrides
+    virtual void draw(Renderer *renderer, const Mat4 &transform, uint32_t flags) override;
+    virtual Texture2D* getTexture() const override;
+    virtual void setTexture(Texture2D *texture) override;
+    virtual bool isOpacityModifyRGB() const override;
+    virtual void setOpacityModifyRGB(bool isOpacityModifyRGB) override;
+    virtual const Color3B& getColor() const override;
+    virtual void setColor(const Color3B& color) override;
+    virtual void setOpacity(GLubyte opacity) override;
+    /**
+    * @code
+    * When this function bound into js or lua,the parameter will be changed
+    * In js: var setBlendFunc(var src, var dst)
+    * @endcode
+    * @lua NA
+    */
+    virtual void setBlendFunc(const BlendFunc& blendFunc) override;
+    /**
+    * @lua NA
+    */
+    virtual const BlendFunc& getBlendFunc() const override;
 
 CC_CONSTRUCTOR_ACCESS:
     AtlasNode();
@@ -110,40 +112,39 @@ CC_CONSTRUCTOR_ACCESS:
     bool initWithTexture(Texture2D* texture, int tileWidth, int tileHeight, int itemsToRender);
 
 protected:
-    friend class Director;
-    
     void calculateMaxItems();
     void updateBlendFunc();
     void updateOpacityModifyRGB();
+
+    friend class Director;
     void setIgnoreContentScaleFactor(bool bIgnoreContentScaleFactor);
 
     /** Chars per row. */
-    int    _itemsPerRow = 0;
+    int    _itemsPerRow;
     /** Chars per column. */
-    int    _itemsPerColumn = 0;
+    int    _itemsPerColumn;
 
     /** Width of each char. */
-    int    _itemWidth = 0;
+    int    _itemWidth;
     /** Height of each char. */
-    int    _itemHeight = 0;
+    int    _itemHeight;
     
     Color3B    _colorUnmodified;
     
-    TextureAtlas* _textureAtlas = nullptr;
+    TextureAtlas* _textureAtlas;
     /** Protocol variables. */
-    bool _isOpacityModifyRGB = false;
+    bool _isOpacityModifyRGB;
     BlendFunc _blendFunc;
 
     /** Quads to draw. */
-    size_t _quadsToDraw = 0;
-
+    ssize_t _quadsToDraw;
+    /** Color uniform. */
+    GLint    _uniformColor;
     /** This variable is only used for LabelAtlas FPS display. So plz don't modify its value. */
-    bool _ignoreContentScaleFactor = false;
-    
+    bool _ignoreContentScaleFactor;
+    /** Quad command. */
     QuadCommand _quadCommand;
-    backend::UniformLocation _textureLocation;
-    backend::UniformLocation _mvpMatrixLocation;
-    
+
 private:
     CC_DISALLOW_COPY_AND_ASSIGN(AtlasNode);
 
@@ -153,3 +154,7 @@ private:
 /// @}
 
 NS_CC_END
+
+#endif // __CCATLAS_NODE_H__
+
+

@@ -34,6 +34,7 @@
 #include "platform/CCFileUtils.h"
 
 using namespace cocos2d;
+using namespace cocos2d::experimental;
 
 AudioEngineImpl * g_AudioEngineImpl = nullptr;
 
@@ -94,7 +95,7 @@ bool AudioEngineImpl::init()
     mapSound.clear();
 
     auto scheduler = cocos2d::Director::getInstance()->getScheduler();
-    scheduler->schedule(CC_SCHEDULE_SELECTOR(AudioEngineImpl::update), this, 0.05f, false);
+    scheduler->schedule(schedule_selector(AudioEngineImpl::update), this, 0.05f, false);
 
     g_AudioEngineImpl = this;
 
@@ -300,7 +301,7 @@ void AudioEngineImpl::uncacheAll()
     mapId.clear();
 }
 
-int AudioEngineImpl::preload(const std::string& filePath, std::function<void(bool isSuccess)> callback)
+int AudioEngineImpl::preload(const std::string& filePath, const std::function<void(bool isSuccess)>& callback)
 {
     FMOD::Sound * sound = findSound(filePath);
     if (!sound) {

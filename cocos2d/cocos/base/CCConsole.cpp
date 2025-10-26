@@ -44,6 +44,11 @@
 #include "platform/win32/inet_pton_mingw.h"
 #endif
 #define bzero(a, b) memset(a, 0, b);
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WINRT)
+#include "platform/winrt/inet_ntop_winrt.h"
+#include "platform/winrt/inet_pton_winrt.h"
+#include "platform/winrt/CCWinRTUtils.h"
+#endif
 #else
 #include <netdb.h>
 #include <unistd.h>
@@ -63,9 +68,10 @@
 #include "renderer/CCTextureCache.h"
 #include "base/base64.h"
 #include "base/ccUtils.h"
+#include "base/allocator/CCAllocatorDiagnostics.h"
 NS_CC_BEGIN
 
-extern const char* cocos2dVersion(void);
+extern const char* cocos2dVersion();
 
 #define PROMPT  "> "
 #define DEFAULT_COMMAND_SEPARATOR '|'
@@ -108,13 +114,15 @@ namespace {
         if (Director::getInstance()->getOpenGLView())
         {
             HWND hwnd = Director::getInstance()->getOpenGLView()->getWin32Window();
-            // use non-block version of SendMessage 
-            PostMessage(hwnd,
-                WM_COPYDATA,
-                (WPARAM)(HWND)hwnd,
-                (LPARAM)(LPVOID)&myCDS);
-
+            SendMessage(hwnd,
+                        WM_COPYDATA,
+                        (WPARAM)(HWND)hwnd,
+                        (LPARAM)(LPVOID)&myCDS);
         }
+    }
+#elif CC_TARGET_PLATFORM == CC_PLATFORM_WINRT
+    void SendLogToWindow(const char *log)
+    {
     }
 #endif
 }
@@ -158,13 +166,17 @@ void log(const char * format, ...)
             delete[] buf;
         }
     } while (true);
+#if CC_TARGET_PLATFORM != CC_PLATFORM_WIN32
     buf[nret] = '\n';
     buf[++nret] = '\0';
+#else
+    buf[nret] = '\0';
+#endif
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
     __android_log_print(ANDROID_LOG_DEBUG, "cocos2d-x debug info", "%s", buf);
 
-#elif CC_TARGET_PLATFORM ==  CC_PLATFORM_WIN32
+#elif CC_TARGET_PLATFORM ==  CC_PLATFORM_WIN32 || CC_TARGET_PLATFORM == CC_PLATFORM_WINRT
 
     int pos = 0;
     int len = nret;
@@ -173,16 +185,21 @@ void log(const char * format, ...)
 
     do
     {
-        std::copy(buf + pos, buf + pos + MAX_LOG_LENGTH, tempBuf);
+        int dataSize = std::min(MAX_LOG_LENGTH, len - pos);
+        std::copy(buf + pos, buf + pos + dataSize, tempBuf);
 
-        tempBuf[MAX_LOG_LENGTH] = 0;
+        tempBuf[dataSize] = 0;
 
         MultiByteToWideChar(CP_UTF8, 0, tempBuf, -1, wszBuf, sizeof(wszBuf));
         OutputDebugStringW(wszBuf);
+        OutputDebugStringW(L"\n");
         WideCharToMultiByte(CP_ACP, 0, wszBuf, -1, tempBuf, sizeof(tempBuf), nullptr, FALSE);
+#if CC_TARGET_PLATFORM != CC_PLATFORM_WIN32     
         printf("%s", tempBuf);
-
-        pos += MAX_LOG_LENGTH;
+#else
+        printf("%s\n", tempBuf);
+#endif
+        pos += dataSize;
 
     } while (pos < len);
     SendLogToWindow(buf);
@@ -524,7 +541,7 @@ bool Console::listenOnTCP(int port)
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
 
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) || (CC_TARGET_PLATFORM == CC_PLATFORM_WINRT)
     WSADATA wsaData;
     n = WSAStartup(MAKEWORD(2, 2),&wsaData);
 #endif
@@ -566,7 +583,7 @@ bool Console::listenOnTCP(int port)
             break;          /* success */
 
 /* bind error, close and try next one */
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) || (CC_TARGET_PLATFORM == CC_PLATFORM_WINRT)
         closesocket(listenfd);
 #else
         close(listenfd);
@@ -706,7 +723,7 @@ void Console::log(const char* buf)
 {
     if( _sendDebugStrings ) {
         _DebugStringsMutex.lock();
-        _DebugStrings.push_back(buf);
+        _DebugStrings.emplace_back(buf);
         _DebugStringsMutex.unlock();
     }
 }
@@ -775,7 +792,7 @@ void Console::loop()
                     //receive a SIGPIPE, which will cause linux system shutdown the sending process.
                     //Add this ioctl code to check if the socket has been closed by peer.
                     
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) || (CC_TARGET_PLATFORM == CC_PLATFORM_WINRT)
                     u_long n = 0;
                     ioctlsocket(fd, FIONREAD, &n);
 #else
@@ -828,14 +845,14 @@ void Console::loop()
     // clean up: ignore stdin, stdout and stderr
     for(const auto &fd: _fds )
     {
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) || (CC_TARGET_PLATFORM == CC_PLATFORM_WINRT)
         closesocket(fd);
 #else
         close(fd);
 #endif
     }
     
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) || (CC_TARGET_PLATFORM == CC_PLATFORM_WINRT)
     closesocket(_listenfd);
     WSACleanup();
 #else
@@ -1156,7 +1173,7 @@ void Console::commandDebugMsg(int fd, const std::string& /*args*/)
 
 void Console::commandDebugMsgSubCommandOnOff(int /*fd*/, const std::string& args)
 {
-    _sendDebugStrings = (args.compare("on") == 0);
+    _sendDebugStrings = (args == "on");
 }
 
 void Console::commandDirectorSubCommandPause(int /*fd*/, const std::string& /*args*/)
@@ -1199,7 +1216,7 @@ void Console::commandExit(int fd, const std::string& /*args*/)
 {
     FD_CLR(fd, &_read_set);
     _fds.erase(std::remove(_fds.begin(), _fds.end(), fd), _fds.end());
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) || (CC_TARGET_PLATFORM == CC_PLATFORM_WINRT)
     closesocket(fd);
 #else
     close(fd);
@@ -1224,7 +1241,7 @@ void Console::commandFps(int fd, const std::string& /*args*/)
 
 void Console::commandFpsSubCommandOnOff(int /*fd*/, const std::string& args)
 {
-    bool state = (args.compare("on") == 0);
+    bool state = (args == "on");
     Director *dir = Director::getInstance();
     Scheduler *sched = dir->getScheduler();
     sched->performFunctionInCocosThread( std::bind(&Director::setDisplayStats, dir, state));
@@ -1278,8 +1295,8 @@ void Console::commandProjectionSubCommand3d(int /*fd*/, const std::string& /*arg
 
 void Console::commandResolution(int /*fd*/, const std::string& args)
 {
-    int policy;
-    float width, height;
+    int width, height, policy;
+    
     std::istringstream stream( args );
     stream >> width >> height>> policy;
     
@@ -1346,8 +1363,8 @@ void Console::commandTouchSubCommandTap(int fd, const std::string& args)
     if((argv.size() == 3 ) && (Console::Utility::isFloat(argv[1]) && Console::Utility::isFloat(argv[2])))
     {
         
-        float x = (float)utils::atof(argv[1].c_str());
-        float y = (float)utils::atof(argv[2].c_str());
+        float x = utils::atof(argv[1].c_str());
+        float y = utils::atof(argv[2].c_str());
         
         std::srand ((unsigned)time(nullptr));
         _touchId = rand();
@@ -1373,10 +1390,10 @@ void Console::commandTouchSubCommandSwipe(int fd, const std::string& args)
        && (Console::Utility::isFloat(argv[3])) && (Console::Utility::isFloat(argv[4])))
     {
         
-        float x1 = (float)utils::atof(argv[1].c_str());
-        float y1 = (float)utils::atof(argv[2].c_str());
-        float x2 = (float)utils::atof(argv[3].c_str());
-        float y2 = (float)utils::atof(argv[4].c_str());
+        float x1 = utils::atof(argv[1].c_str());
+        float y1 = utils::atof(argv[2].c_str());
+        float x2 = utils::atof(argv[3].c_str());
+        float y2 = utils::atof(argv[4].c_str());
         
         std::srand ((unsigned)time(nullptr));
         _touchId = rand();

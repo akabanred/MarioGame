@@ -36,6 +36,7 @@ THE SOFTWARE.
 #include "platform/CCSAXParser.h"
 #include "base/CCVector.h"
 #include "base/CCValue.h"
+#include "base/CCMap.h"
 #include "2d/CCTMXObjectGroup.h" // needed for Vector<TMXObjectGroup*> for binding
 
 #include <string>
@@ -72,7 +73,8 @@ enum {
     TMXPropertyLayer,
     TMXPropertyObjectGroup,
     TMXPropertyObject,
-    TMXPropertyTile
+    TMXPropertyTile,
+    TMXPropertyAnimation
 };
 
 typedef enum TMXTileFlags_ {
@@ -106,7 +108,7 @@ public:
      */
     virtual ~TMXLayerInfo();
 
-    void setProperties(ValueMap properties);
+    void setProperties(const ValueMap& properties);
     ValueMap& getProperties();
 
     ValueMap            _properties;
@@ -117,6 +119,35 @@ public:
     unsigned char       _opacity;
     bool                _ownTiles;
     Vec2               _offset;
+};
+
+/** @brief TMXTileAnimFrame contains the information about the frame of a animated tile like:
+- Frame gid
+- duration of this frame
+
+This information is obtained from the TMX file.
+*/
+struct CC_DLL TMXTileAnimFrame
+{
+    TMXTileAnimFrame(uint32_t tileID, float duration);
+    /** gid of the frame */
+    uint32_t _tileID = 0;
+    /** duration of the frame */
+    float _duration = 0.0f;
+};
+
+/** @brief TMXTileAnimInfo contains the information about the animated tile like:
+- Animated Tile gid
+- frames the animated tile contains
+
+This information is obtained from the TMX file.
+*/
+struct CC_DLL TMXTileAnimInfo : public Ref
+{
+    static TMXTileAnimInfo * create(uint32_t  tileID);
+    explicit TMXTileAnimInfo(uint32_t  tileID);
+    uint32_t _tileID = 0;
+    std::vector<TMXTileAnimFrame> _frames;
 };
 
 /** @brief TMXTilesetInfo contains the information about the tilesets like:
@@ -143,6 +174,9 @@ public:
     //! size in pixels of the image
     Size            _imageSize;
     std::string     _originSourceImage;
+
+    //! map from gid of animated tile to its animation info
+    Map<uint32_t, TMXTileAnimInfo*> _animationInfo;
 
 public:
     /**
@@ -178,6 +212,10 @@ public:
     /** creates a TMX Format with an XML string and a TMX resource path */
     static TMXMapInfo * createWithXML(const std::string& tmxString, const std::string& resourcePath);
     
+    /** creates a TMX Format with a tmx file */
+    CC_DEPRECATED_ATTRIBUTE static TMXMapInfo * formatWithTMXFile(const char *tmxFile) { return TMXMapInfo::create(tmxFile); };
+    /** creates a TMX Format with an XML string and a TMX resource path */
+    CC_DEPRECATED_ATTRIBUTE static TMXMapInfo * formatWithXML(const char* tmxString, const char* resourcePath) { return TMXMapInfo::createWithXML(tmxString, resourcePath); };
     /**
      * @js ctor
      */
@@ -261,6 +299,7 @@ public:
 
     /// is storing characters?
     bool isStoringCharacters() const { return _storingCharacters; }
+    CC_DEPRECATED_ATTRIBUTE bool getStoringCharacters() const { return isStoringCharacters(); }
     void setStoringCharacters(bool storingCharacters) { _storingCharacters = storingCharacters; }
 
     /// properties
@@ -338,6 +377,7 @@ protected:
     int _currentFirstGID;
     bool _recordFirstGID;
     std::string _externalTilesetFilename;
+    std::string _externalTilesetFullPath;
 };
 
 // end of tilemap_parallax_nodes group

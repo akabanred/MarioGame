@@ -33,7 +33,7 @@ THE SOFTWARE.
 #include <atomic>
 #include <vector>
 
-namespace cocos2d {
+namespace cocos2d { namespace experimental {
 
 class Track;
 class AudioMixer;
@@ -85,4 +85,4 @@ private:
     std::atomic_bool _isMixingFrame;
 };
 
-} // namespace cocos2d {
+}} // namespace cocos2d { namespace experimental {

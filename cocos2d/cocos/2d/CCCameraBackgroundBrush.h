@@ -23,29 +23,24 @@
  THE SOFTWARE.
  
  ****************************************************************************/
-#pragma once
+#ifndef _CCCAMERA_BACKGROUND_BRUSH_H__
+#define _CCCAMERA_BACKGROUND_BRUSH_H__
 
 #include "base/ccTypes.h"
 #include "base/CCRef.h"
-#include "base/CCEventListenerCustom.h"
 #include "3d/CCFrustum.h"
 #include "renderer/CCQuadCommand.h"
 #include "renderer/CCCustomCommand.h"
-#include "renderer/CCGroupCommand.h"
-#include "renderer/backend/Types.h"
-#include <vector>
+#include "renderer/CCFrameBuffer.h"
 
 NS_CC_BEGIN
 
 class CameraBackgroundColorBrush;
 class CameraBackgroundDepthBrush;
 class CameraBackgroundSkyBoxBrush;
-class Camera;
 
-namespace backend {
-    class ProgramState;
-    class Buffer;
-}
+class GLProgramState;
+class Camera;
 
 /**
  * Defines a brush to clear the background of camera.
@@ -119,7 +114,7 @@ CC_CONSTRUCTOR_ACCESS :
     virtual bool init() { return true; }
     
 protected:
-    backend::ProgramState* _programState = nullptr;
+    GLProgramState* _glProgramState;
 };
 
 /**
@@ -157,9 +152,7 @@ CC_CONSTRUCTOR_ACCESS:
     virtual ~CameraBackgroundDepthBrush();
 
     virtual bool init() override;
-private:
-    void onBeforeDraw();
-    void onAfterDraw();
+
 protected:
 #if CC_ENABLE_CACHE_TEXTURE_DATA
     EventListenerCustom* _backToForegroundListener;
@@ -168,18 +161,13 @@ protected:
 
 protected:
     float _depth;
-    backend::UniformLocation _locDepth;
-    CustomCommand _customCommand;
-    GroupCommand _groupCommand;
-
-    bool _clearColor;
-    std::vector<V3F_C4B_T2F> _vertices;
-    struct {
-        uint32_t stencilWriteMask = 0;
-        bool depthTest = true;
-        backend::CompareFunction compareFunc = backend::CompareFunction::ALWAYS;
-    } _stateBlock;
-
+    
+    GLboolean _clearColor;
+    
+    V3F_C4B_T2F_Quad _quad;
+    GLuint      _vao;
+    GLuint      _vertexBuffer;
+    GLuint      _indexBuffer;
 };
 
 /**
@@ -279,13 +267,13 @@ CC_CONSTRUCTOR_ACCESS :
      * init Skybox.
      */
     virtual bool init() override;
-
-private:
-    void onBeforeDraw();
-    void onAfterDraw();
-
+    
 protected:
     void initBuffer();
+    
+    GLuint      _vao;
+    GLuint      _vertexBuffer;
+    GLuint      _indexBuffer;
     
     TextureCube*  _texture;
     
@@ -296,21 +284,8 @@ protected:
 private:
     bool _actived;
     bool _textureValid;
-
-    CustomCommand _customCommand;
-    GroupCommand _groupCommand;
-
-    backend::UniformLocation _uniformColorLoc;
-    backend::UniformLocation _uniformCameraRotLoc;
-    backend::UniformLocation _uniformEnvLoc;
-
-    struct {
-        bool depthTest = true;
-        bool depthWrite = true;
-        backend::CompareFunction depthFunc = backend::CompareFunction::ALWAYS;
-        backend::CullMode cullMode = backend::CullMode::BACK;
-    }_stateBlock;
 };
 
 NS_CC_END
 
+#endif// _CCCAMERA_BACKGROUND_BRUSH_H__

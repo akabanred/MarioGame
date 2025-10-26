@@ -26,7 +26,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
-#pragma once
+#ifndef __CC_PARTICLE_SYSTEM_QUAD_H__
+#define __CC_PARTICLE_SYSTEM_QUAD_H__
 
 #include "2d/CCParticleSystem.h"
 #include "renderer/CCQuadCommand.h"
@@ -124,6 +125,11 @@ public:
      * @js NA
      * @lua NA
      */
+    virtual void postStep() override;
+    /**
+     * @js NA
+     * @lua NA
+     */
     virtual void draw(Renderer *renderer, const Mat4 &transform, uint32_t flags) override;
 
     /**
@@ -156,6 +162,8 @@ CC_CONSTRUCTOR_ACCESS:
      * @lua NA
      */
     virtual bool initWithTotalParticles(int numberOfParticles) override;
+    
+
 
 protected:
     /** initializes the indices for the vertices*/
@@ -167,15 +175,19 @@ protected:
     /** Updates texture coords */
     void updateTexCoords();
 
+    void setupVBOandVAO();
+    void setupVBO();
     bool allocMemory();
 
-    V3F_C4B_T2F_Quad    *_quads = nullptr;        // quads to be rendered
-    unsigned short      *_indices = nullptr;      // indices
+    V3F_C4B_T2F_Quad    *_quads;        // quads to be rendered
+    GLushort            *_indices;      // indices
+    GLuint              _VAOname;
+    GLuint              _buffersVBO[2]; //0: vertex  1: indices
 
     QuadCommand _quadCommand;           // quad command
     
-    backend::UniformLocation _mvpMatrixLocaiton;
-    backend::UniformLocation _textureLocation;    
+
+
 private:
     CC_DISALLOW_COPY_AND_ASSIGN(ParticleSystemQuad);
 };
@@ -184,3 +196,6 @@ private:
 /// @}
 
 NS_CC_END
+
+#endif //__CC_PARTICLE_SYSTEM_QUAD_H__
+

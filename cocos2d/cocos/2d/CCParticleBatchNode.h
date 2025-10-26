@@ -28,11 +28,12 @@
  * THE SOFTWARE.
  *
  */
-#pragma once
+#ifndef __CCPARTICLEBATCHNODE_H__
+#define __CCPARTICLEBATCHNODE_H__
 
 #include "2d/CCNode.h"
 #include "base/CCProtocols.h"
-#include "renderer/CCCustomCommand.h"
+#include "renderer/CCBatchCommand.h"
 
 NS_CC_BEGIN
 
@@ -171,18 +172,18 @@ private:
     void addChildByTagOrName(ParticleSystem* child, int z, int tag, const std::string &name, bool setTag);
     void updateBlendFunc();
     /** the texture atlas used for drawing the quads */
-    TextureAtlas* _textureAtlas = nullptr;
+    TextureAtlas* _textureAtlas;
 
     /** the blend function used for drawing the quads */
     BlendFunc _blendFunc;
-    
-    CustomCommand _customCommand;
-    
-    backend::UniformLocation _mvpMatrixLocaiton;
-    backend::UniformLocation _textureLocation;
+    // quad command
+    BatchCommand _batchCommand;
 };
 
 // end of _2d group
 /// @}
 
 NS_CC_END
+
+#endif /* __CCPARTICLEBATCHNODE_H__ */
+

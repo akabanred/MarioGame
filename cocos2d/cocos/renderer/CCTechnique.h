@@ -27,10 +27,13 @@
  - OGRE3D: http://www.ogre3d.org/
  - Qt3D: http://qt-project.org/
  ****************************************************************************/
-#pragma once
+
+#ifndef __cocos2d_libs__CCTechnique__
+#define __cocos2d_libs__CCTechnique__
 
 #include <string>
 #include "renderer/CCRenderState.h"
+#include "renderer/CCPass.h"
 #include "base/CCRef.h"
 #include "platform/CCPlatformMacros.h"
 #include "base/CCVector.h"
@@ -38,28 +41,23 @@
 NS_CC_BEGIN
 
 class Pass;
+class GLProgramState;
 class Material;
 
-namespace  backend
-{
-    class ProgramState;
-}
-
 /// Technique
-class CC_DLL Technique :public Ref
+class CC_DLL Technique : public RenderState
 {
     friend class Material;
     friend class Renderer;
     friend class Pass;
     friend class MeshCommand;
     friend class Mesh;
-    friend class RenderState;
 
 public:
     /** Creates a new Technique with a GLProgramState.
      Method added to support legacy code
      */
-    static Technique* createWithProgramState(Material* parent, backend::ProgramState* state);
+    static Technique* createWithGLProgramState(Material* parent, GLProgramState* state);
     static Technique* create(Material* parent);
 
     /** Adds a new pass to the Technique.
@@ -82,21 +80,17 @@ public:
     /** Returns a new clone of the Technique */
     Technique* clone() const;
 
-    void setMaterial(Material * material) { _material = material; }
-
-    RenderState::StateBlock &getStateBlock() { return _renderState.getStateBlock(); }
-
 protected:
     Technique();
     ~Technique();
     bool init(Material* parent);
 
     void setName(const std::string& name);
-    RenderState _renderState;
+
     std::string _name;
     Vector<Pass*> _passes;
-
-    Material *_material = nullptr;
 };
 
 NS_CC_END
+
+#endif /* defined(__cocos2d_libs__CCTechnique__) */

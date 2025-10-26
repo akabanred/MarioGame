@@ -22,10 +22,12 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
-#pragma once
+
+#ifndef __CC_TRIANGLES_COMMAND__
+#define __CC_TRIANGLES_COMMAND__
 
 #include "renderer/CCRenderCommand.h"
-#include "renderer/CCPipelineDescriptor.h"
+#include "renderer/CCGLProgramState.h"
 
 /**
  * @addtogroup renderer
@@ -38,38 +40,21 @@ NS_CC_BEGIN
  Every TrianglesCommand will have generate material ID by give textureID, glProgramState, Blend function
  if the material id is the same, these TrianglesCommands could be batched to save draw call.
 */
-namespace backend {
-    class TextureBackend;
-    class Program;
-}
-
-class Texture2D;
-
 class CC_DLL TrianglesCommand : public RenderCommand
 {
 public:
     /**The structure of Triangles. */
     struct Triangles
     {
-        Triangles(V3F_C4B_T2F* _verts, unsigned short* _indices, unsigned int _vertCount, unsigned int _indexCount)
-        : verts(_verts)
-        , indices(_indices)
-        , vertCount(_vertCount)
-        , indexCount(_indexCount)
-        {}
-
-        Triangles() {}
-
         /**Vertex data pointer.*/
-        V3F_C4B_T2F* verts = nullptr;
+        V3F_C4B_T2F* verts;
         /**Index data pointer.*/
-        unsigned short* indices = nullptr;
+        unsigned short* indices;
         /**The number of vertices.*/
-        unsigned int vertCount = 0;
+        int vertCount;
         /**The number of indices.*/
-        unsigned int indexCount = 0;
+        int indexCount;
     };
-
     /**Constructor.*/
     TrianglesCommand();
     /**Destructor.*/
@@ -77,49 +62,58 @@ public:
     
     /** Initializes the command.
      @param globalOrder GlobalZOrder of the command.
-     @param texture The texture used in renderring.
+     @param textureID The openGL handle of the used texture.
+     @param glProgramState The specified glProgram and its uniform.
      @param blendType Blend function for the command.
      @param triangles Rendered triangles for the command.
      @param mv ModelView matrix for the command.
      @param flags to indicate that the command is using 3D rendering or not.
      */
-    void init(float globalOrder, cocos2d::Texture2D* texture, const BlendFunc& blendType,  const Triangles& triangles, const Mat4& mv, uint32_t flags);
+    void init(float globalOrder, GLuint textureID, GLProgramState* glProgramState, BlendFunc blendType, const Triangles& triangles,const Mat4& mv, uint32_t flags);
+    /**Deprecated function, the params is similar as the upper init function, with flags equals 0.*/
+    CC_DEPRECATED_ATTRIBUTE void init(float globalOrder, GLuint textureID, GLProgramState* glProgramState, BlendFunc blendType, const Triangles& triangles,const Mat4& mv);
+    void init(float globalOrder, Texture2D* textureID, GLProgramState* glProgramState, BlendFunc blendType, const Triangles& triangles, const Mat4& mv, uint32_t flags);
+    /**Apply the texture, shaders, programs, blend functions to GPU pipeline.*/
+    void useMaterial() const;
     /**Get the material id of command.*/
     uint32_t getMaterialID() const { return _materialID; }
+    /**Get the openGL texture handle.*/
+    GLuint getTextureID() const { return _textureID; }
     /**Get a const reference of triangles.*/
     const Triangles& getTriangles() const { return _triangles; }
     /**Get the vertex count in the triangles.*/
-    size_t getVertexCount() const { return _triangles.vertCount; }
+    ssize_t getVertexCount() const { return _triangles.vertCount; }
     /**Get the index count of the triangles.*/
-    size_t getIndexCount() const { return _triangles.indexCount; }
+    ssize_t getIndexCount() const { return _triangles.indexCount; }
     /**Get the vertex data pointer.*/
     const V3F_C4B_T2F* getVertices() const { return _triangles.verts; }
     /**Get the index data pointer.*/
     const unsigned short* getIndices() const { return _triangles.indices; }
+    /**Get the glprogramstate.*/
+    GLProgramState* getGLProgramState() const { return _glProgramState; }
+    /**Get the blend function.*/
+    BlendFunc getBlendType() const { return _blendType; }
     /**Get the model view matrix.*/
     const Mat4& getModelView() const { return _mv; }
     
-    /** update material ID */
-    void updateMaterialID();
-  
 protected:
     /**Generate the material ID by textureID, glProgramState, and blend function.*/
     void generateMaterialID();
     
     /**Generated material id.*/
-    uint32_t _materialID = 0;
-
+    uint32_t _materialID;
+    /**OpenGL handle for texture.*/
+    GLuint _textureID;
+    /**GLprogramstate for the command. encapsulate shaders and uniforms.*/
+    GLProgramState* _glProgramState;
+    /**Blend function when rendering the triangles.*/
+    BlendFunc _blendType;
     /**Rendered triangles.*/
     Triangles _triangles;
     /**Model view matrix when rendering the triangles.*/
     Mat4 _mv;
 
-    uint8_t _alphaTextureID = 0; // ANDROID ETC1 ALPHA supports.
-
-    // Cached value to determine to generate material id or not.
-    BlendFunc _blendType = BlendFunc::DISABLE;
-    backend::ProgramType _programType = backend::ProgramType::CUSTOM_PROGRAM;
-    backend::TextureBackend* _texture = nullptr;
+    GLuint _alphaTextureID; // ANDROID ETC1 ALPHA supports.
 };
 
 NS_CC_END
@@ -127,3 +121,4 @@ NS_CC_END
  end of support group
  @}
  */
+#endif // defined(__CC_TRIANGLES_COMMAND__)

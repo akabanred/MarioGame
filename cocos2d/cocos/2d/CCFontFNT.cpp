@@ -522,7 +522,7 @@ FontFNT * FontFNT::create(const std::string& fntFilePath, const Rect& imageRect,
     {
         return nullptr;
     }
-    tempFont->setFontSize((float)newConf->_fontSize);
+    tempFont->setFontSize(newConf->_fontSize);
     tempFont->autorelease();
     return tempFont;
 }
@@ -544,7 +544,7 @@ FontFNT* FontFNT::create(const std::string& fntFilePath, const std::string& subT
     {
         return nullptr;
     }
-    tempFont->setFontSize((float)newConf->_fontSize);
+    tempFont->setFontSize(newConf->_fontSize);
     tempFont->autorelease();
     return tempFont;
 }
@@ -563,7 +563,7 @@ FontFNT* FontFNT::create(const std::string& fntFilePath)
     }
     FontFNT* tempFont = new FontFNT(newConf);
 
-    tempFont->setFontSize((float)newConf->_fontSize);
+    tempFont->setFontSize(newConf->_fontSize);
     if (!tempFont)
     {
         return nullptr;
@@ -672,7 +672,7 @@ FontAtlas * FontFNT::createFontAtlas()
     
     // common height
     int originalFontSize = _configuration->_fontSize;
-    float originalLineHeight = (float)_configuration->_commonHeight;
+    float originalLineHeight = _configuration->_commonHeight;
     float factor = 0.0f;
     if (std::abs(_fontSize - originalFontSize) < FLT_EPSILON) {
         factor = 1.0f;

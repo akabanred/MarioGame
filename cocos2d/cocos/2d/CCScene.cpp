@@ -33,6 +33,8 @@ THE SOFTWARE.
 #include "base/CCEventListenerCustom.h"
 #include "base/ccUTF8.h"
 #include "renderer/CCRenderer.h"
+#include "renderer/CCFrameBuffer.h"
+#include "platform/CCDataManager.h"
 
 #if CC_USE_PHYSICS
 #include "physics/CCPhysicsWorld.h"
@@ -63,6 +65,19 @@ Scene::Scene()
     _event->retain();
     
     Camera::_visitingCamera = nullptr;
+
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+    DataManager::onSceneLoaderBegin();
+#endif
+}
+
+void Scene::onEnter()
+{
+    Node::onEnter();
+    
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+    DataManager::onSceneLoaderEnd();
+#endif
 }
 
 Scene::~Scene()
@@ -174,6 +189,11 @@ const std::vector<Camera*>& Scene::getCameras()
 
 void Scene::render(Renderer* renderer, const Mat4& eyeTransform, const Mat4* eyeProjection)
 {
+    render(renderer, &eyeTransform, eyeProjection, 1);
+}
+
+void Scene::render(Renderer* renderer, const Mat4* eyeTransforms, const Mat4* eyeProjections, unsigned int multiViewCount)
+{
     auto director = Director::getInstance();
     Camera* defaultCamera = nullptr;
     const auto& transform = getNodeToParentTransform();
@@ -196,12 +216,14 @@ void Scene::render(Renderer* renderer, const Mat4& eyeTransform, const Mat4* eye
         // then the "nodeToParent transform" will be lost.
         // And it is important that the change is "permanent", because the matrix might be used for calculate
         // culling and other stuff.
-        if (eyeProjection)
-            camera->setAdditionalProjection(*eyeProjection * camera->getProjectionMatrix().getInversed());
-
-        camera->setAdditionalTransform(eyeTransform.getInversed());
-        director->pushMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION);
-        director->loadMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION, Camera::_visitingCamera->getViewProjectionMatrix());
+        for (unsigned int i = 0; i < multiViewCount; ++i) {
+            if (eyeProjections)
+                camera->setAdditionalProjection(eyeProjections[i] * camera->getProjectionMatrix().getInversed());
+            if (eyeTransforms)
+                camera->setAdditionalTransform(eyeTransforms[i].getInversed());
+            director->pushProjectionMatrix(i);
+            director->loadProjectionMatrix(Camera::_visitingCamera->getViewProjectionMatrix(), i);
+        }
 
         camera->apply();
         //clear background with max depth
@@ -216,37 +238,45 @@ void Scene::render(Renderer* renderer, const Mat4& eyeTransform, const Mat4* eye
 #endif
 
         renderer->render();
+        camera->restore();
 
-        director->popMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION);
+        for (unsigned int i = 0; i < multiViewCount; ++i)
+            director->popProjectionMatrix(i);
 
         // we shouldn't restore the transform matrix since it could be used
         // from "update" or other parts of the game to calculate culling or something else.
-        //        camera->setNodeToParentTransform(eyeCopy);
+//        camera->setNodeToParentTransform(eyeCopy);
     }
 
 #if CC_USE_3D_PHYSICS && CC_ENABLE_BULLET_INTEGRATION
     if (_physics3DWorld && _physics3DWorld->isDebugDrawEnabled())
     {
         Camera *physics3dDebugCamera = _physics3dDebugCamera != nullptr ? _physics3dDebugCamera: defaultCamera;
-
-        if (eyeProjection)
-            physics3dDebugCamera->setAdditionalProjection(*eyeProjection * physics3dDebugCamera->getProjectionMatrix().getInversed());
-
-        physics3dDebugCamera->setAdditionalTransform(eyeTransform.getInversed());
-        director->pushMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION);
-        director->loadMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION, physics3dDebugCamera->getViewProjectionMatrix());
-
+        
+        for (unsigned int i = 0; i < multiViewCount; ++i) {
+            if (eyeProjections)
+                physics3dDebugCamera->setAdditionalProjection(eyeProjections[i] * physics3dDebugCamera->getProjectionMatrix().getInversed());
+            if (eyeTransforms)
+                physics3dDebugCamera->setAdditionalTransform(eyeTransforms[i].getInversed());
+            director->pushProjectionMatrix(i);
+            director->loadProjectionMatrix(physics3dDebugCamera->getViewProjectionMatrix(), i);
+        }
+        
         physics3dDebugCamera->apply();
         physics3dDebugCamera->clearBackground();
 
         _physics3DWorld->debugDraw(renderer);
         renderer->render();
+        
+        physics3dDebugCamera->restore();
 
-        director->popMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION);
+        for (unsigned int i = 0; i < multiViewCount; ++i)
+            director->popProjectionMatrix(i);
     }
 #endif
 
     Camera::_visitingCamera = nullptr;
+//    experimental::FrameBuffer::applyDefaultFBO();
 }
 
 void Scene::removeAllChildren()

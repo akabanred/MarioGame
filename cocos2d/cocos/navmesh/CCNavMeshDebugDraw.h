@@ -23,20 +23,17 @@
  THE SOFTWARE.
  ****************************************************************************/
 
-#pragma once
+#ifndef __CCNAV_MESH_DEBUG_DRAW_H__
+#define __CCNAV_MESH_DEBUG_DRAW_H__
 
 #include "base/ccConfig.h"
 #if CC_USE_NAVMESH
 
+#include "renderer/CCGLProgram.h"
+#include "renderer/CCCustomCommand.h"
 #include "renderer/CCRenderState.h"
-#include "renderer/backend/ProgramState.h"
-#include "renderer/backend/Types.h"
-#include "renderer/backend/Buffer.h"
 #include "math/Vec3.h"
 #include "recast/DebugUtils/DebugDraw.h"
-#include "renderer/CCGroupCommand.h"
-#include "renderer/CCCallbackCommand.h"
-#include "renderer/CCCustomCommand.h"
 #include <string>
 #include <vector>
 
@@ -71,13 +68,9 @@ public:
 
 private:
 
-    void initCustomCommand(CustomCommand &command);
-    backend::PrimitiveType getPrimitiveType(duDebugDrawPrimitives prim);
+    GLenum getPrimitiveType(duDebugDrawPrimitives prim);
+    void drawImplement(const cocos2d::Mat4& transform, uint32_t flags);
     static Vec4 getColor(unsigned int col);
-
-    void onBeforeVisitCmd();
-    void onAfterVisitCmd();
-    void onBeforeEachCommand(bool enableDepthWrite);
 
 private:
 
@@ -89,34 +82,23 @@ private:
 
     struct Primitive
     {
-        backend::PrimitiveType  type        = backend::PrimitiveType::LINE;
-        bool                    depthMask   = false;
-        unsigned short          start       = 0;
-        unsigned short          end         = 0;
-        float                   size        = 1.0f;
+        GLenum type;
+        bool depthMask;
+        unsigned short start;
+        unsigned short end;
+        float size;
     };
 
-    Primitive             * _currentPrimitive   = nullptr;
-    backend::ProgramState * _programState       = nullptr;
-    bool _currentDepthMask                      = true;
-    bool _dirtyBuffer                           = true;
-    backend::Buffer       * _vertexBuffer       = nullptr;
-    
-    //RenderState::StateBlock     _stateBlock;
-    std::vector<V3F_C4F>        _vertices;
-    std::vector<Primitive*>     _primitiveList;
-    backend::UniformLocation    _locMVP;
-    std::vector<CustomCommand>  _commands;
-
-    CallbackCommand             _beforeCommand;
-    CallbackCommand             _afterCommand;
-
-    //renderer state cache variables
-    bool                        _rendererDepthTestEnabled   = true;
-    backend::CompareFunction    _rendererDepthCmpFunc       = backend::CompareFunction::LESS;
-    backend::CullMode           _rendererCullMode           = backend::CullMode::BACK;
-    backend::Winding            _rendererWinding            = backend::Winding::COUNTER_CLOCK_WISE;
-    bool                        _rendererDepthWrite         = false;
+    std::vector<V3F_C4F> _vertices;
+    std::vector<Primitive*> _primitiveList;
+    Primitive *_currentPrimitive;
+    GLProgram *_program;
+    CustomCommand _customCmd;
+    RenderState::StateBlock* _stateBlock;
+    GLenum _primitiveType;
+    bool _currentDepthMask;
+    GLuint _vbo;
+    bool _dirtyBuffer;
 };
 
 /** @} */
@@ -124,3 +106,5 @@ private:
 NS_CC_END
 
 #endif //CC_USE_NAVMESH
+
+#endif // __CCNAV_MESH_DEBUG_DRAW_H__

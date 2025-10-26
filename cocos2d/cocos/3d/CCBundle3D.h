@@ -61,18 +61,6 @@ public:
 	virtual void clear();
 
     /**
-    * get define data type
-    * @param str The type in string
-    */
-    static backend::VertexFormat parseGLDataType(const std::string& str, int size);
-
-    /**
-    * get define data type
-    * @param str The type in string
-    */
-    static backend::SamplerAddressMode parseSamplerAddressMode(const std::string& str);
-
-    /**
      * load a file. You must load a file first, then call loadMeshData, loadSkinData, and so on
      * @param path File to be loaded
      * @return result of load
@@ -149,6 +137,12 @@ protected:
     bool loadNodesBinary(NodeDatas& nodedatas);
     NodeData* parseNodesRecursivelyBinary(bool& skeleton, bool singleSprite);
 
+    /**
+     * get define data type
+     * @param str The type in string
+     */
+    GLenum parseGLType(const std::string& str);
+
      /**
      * get define data type
      * @param str The type in string
@@ -159,7 +153,7 @@ protected:
      * get vertex attribute type
      * @param str The type in string
      */
-    shaderinfos::VertexKey parseGLProgramAttribute(const std::string& str);
+    unsigned int parseGLProgramAttribute(const std::string& str);
 
     /*
      * get model path

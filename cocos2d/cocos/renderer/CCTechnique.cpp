@@ -29,17 +29,18 @@
  ****************************************************************************/
 
 #include "renderer/CCTechnique.h"
+#include "renderer/CCGLProgramState.h"
 #include "renderer/CCMaterial.h"
 #include "renderer/CCPass.h"
 
 NS_CC_BEGIN
 
-Technique* Technique::createWithProgramState(Material* parent, backend::ProgramState* state)
+Technique* Technique::createWithGLProgramState(Material* parent, GLProgramState* state)
 {
     auto technique = new (std::nothrow) Technique();
     if (technique && technique->init(parent))
     {
-        auto pass = Pass::createWithProgramState(technique, state);
+        auto pass = Pass::createWithGLProgramState(technique, state);
         technique->addPass(pass);
 
         technique->autorelease();
@@ -70,7 +71,7 @@ Technique::~Technique()
 
 bool Technique::init(Material* parent)
 {
-    _material = parent;
+    _parent = parent;
     return true;
 }
 
@@ -81,11 +82,12 @@ Technique* Technique::clone() const
     if (technique)
     {
         technique->_name = _name;
-        technique->_renderState = _renderState;
+        RenderState::cloneInto(technique);
+
         for (const auto pass: _passes)
         {
             auto p = pass->clone();
-            p->_technique = technique;
+            p->_parent = technique;
             technique->_passes.pushBack(p);
         }
 

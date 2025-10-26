@@ -23,7 +23,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ****************************************************************************/
-#pragma once
+
+#ifndef __CCPLATFORMDEFINE_H__
+#define __CCPLATFORMDEFINE_H__
+
+#include "platform/CCPlatformConfig.h"
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
 
 #include <android/log.h>
 
@@ -57,3 +62,7 @@ THE SOFTWARE.
 #define NULL    ((void *)0)
 #endif
 #endif
+
+#endif // CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+
+#endif /* __CCPLATFORMDEFINE_H__*/

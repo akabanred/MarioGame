@@ -39,11 +39,7 @@ THE SOFTWARE.
 #include "base/ccUtils.h"
 #include "base/ccUTF8.h"
 #include "2d/CCCamera.h"
-#if CC_ICON_SET_SUPPORT
 #include "platform/CCImage.h"
-#endif /* CC_ICON_SET_SUPPORT */
-
-#include "renderer/CCRenderer.h"
 
 NS_CC_BEGIN
 
@@ -209,6 +205,7 @@ GLViewImpl::GLViewImpl(bool initglfw)
 , _monitor(nullptr)
 , _mouseX(0.0f)
 , _mouseY(0.0f)
+, _cursor(nullptr)
 {
     _viewName = "cocos2dx";
     g_keyCodeMap.clear();
@@ -296,14 +293,9 @@ bool GLViewImpl::initWithRect(const std::string& viewName, Rect rect, float fram
     glfwWindowHint(GLFW_STENCIL_BITS,_glContextAttrs.stencilBits);
     
     glfwWindowHint(GLFW_SAMPLES, _glContextAttrs.multisamplingCount);
-    
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
-    // Don't create gl context.
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-#endif
 
-    int neededWidth = (int)(rect.size.width * _frameZoomFactor);
-    int neededHeight = (int)(rect.size.height * _frameZoomFactor);
+    int neededWidth = rect.size.width * _frameZoomFactor;
+    int neededHeight = rect.size.height * _frameZoomFactor;
 
     _mainWindow = glfwCreateWindow(neededWidth, neededHeight, _viewName.c_str(), _monitor, nullptr);
 
@@ -356,8 +348,6 @@ bool GLViewImpl::initWithRect(const std::string& viewName, Rect rect, float fram
 
     setFrameSize(rect.size.width, rect.size.height);
 
-#if (CC_TARGET_PLATFORM != CC_PLATFORM_MAC)
-    
     // check OpenGL version at first
     const GLubyte* glVersion = glGetString(GL_VERSION);
 
@@ -382,7 +372,6 @@ bool GLViewImpl::initWithRect(const std::string& viewName, Rect rect, float fram
 //    // GLFW v3.2 no longer emits "onGLFWWindowSizeFunCallback" at creation time. Force default viewport:
 //    setViewPortInPoints(0, 0, neededWidth, neededHeight);
 //
-#endif
     return true;
 }
 
@@ -394,7 +383,7 @@ bool GLViewImpl::initWithFullScreen(const std::string& viewName)
         return false;
 
     const GLFWvidmode* videoMode = glfwGetVideoMode(_monitor);
-    return initWithRect(viewName, Rect(0, 0, (float)videoMode->width, (float)videoMode->height), 1.0f, false);
+    return initWithRect(viewName, Rect(0, 0, videoMode->width, videoMode->height), 1.0f, false);
 }
 
 bool GLViewImpl::initWithFullscreen(const std::string &viewname, const GLFWvidmode &videoMode, GLFWmonitor *monitor)
@@ -410,7 +399,7 @@ bool GLViewImpl::initWithFullscreen(const std::string &viewname, const GLFWvidmo
     glfwWindowHint(GLFW_BLUE_BITS, videoMode.blueBits);
     glfwWindowHint(GLFW_GREEN_BITS, videoMode.greenBits);
     
-    return initWithRect(viewname, Rect(0, 0, (float)videoMode.width, (float)videoMode.height), 1.0f, false);
+    return initWithRect(viewname, Rect(0, 0, videoMode.width, videoMode.height), 1.0f, false);
 }
 
 bool GLViewImpl::isOpenGLReady()
@@ -450,18 +439,18 @@ void GLViewImpl::pollEvents()
 
 void GLViewImpl::enableRetina(bool enabled)
 {
-// #if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
-//     _isRetinaEnabled = enabled;
-//     if (_isRetinaEnabled)
-//     {
-//         _retinaFactor = 1;
-//     }
-//     else
-//     {
-//         _retinaFactor = 2;
-//     }
-//     updateFrameSize();
-// #endif
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
+    _isRetinaEnabled = enabled;
+    if (_isRetinaEnabled)
+    {
+        _retinaFactor = 1;
+    }
+    else
+    {
+        _retinaFactor = 2;
+    }
+    updateFrameSize();
+#endif
 }
 
 
@@ -513,6 +502,37 @@ void GLViewImpl::setDefaultIcon() const {
     glfwSetWindowIcon(window, 0, nullptr);
 }
 #endif /* CC_ICON_SET_SUPPORT */
+
+void GLViewImpl::setCursor(const std::string& filename, Vec2 hotspot) {
+
+    if (_cursor) {
+        glfwDestroyCursor(_cursor);
+        _cursor = nullptr;
+    }
+
+    Image* ccImage = new (std::nothrow) Image();
+    if (ccImage && ccImage->initWithImageFile(filename)) {
+        GLFWimage image;
+        image.width = ccImage->getWidth();
+        image.height = ccImage->getHeight();
+        image.pixels = ccImage->getData();
+        _cursor = glfwCreateCursor(&image, (int)(hotspot.x * image.width), (int)((1.0f - hotspot.y) * image.height));
+        if (_cursor) {
+            glfwSetCursor(_mainWindow, _cursor);
+        }
+    }
+    CC_SAFE_DELETE(ccImage);
+}
+
+void GLViewImpl::setDefaultCursor() {
+
+    if (_cursor) {
+        glfwDestroyCursor(_cursor);
+        _cursor = nullptr;
+    }
+
+    glfwSetCursor(_mainWindow, NULL);
+}
 
 void GLViewImpl::setCursorVisible( bool isVisible )
 {
@@ -581,13 +601,13 @@ void GLViewImpl::setFullscreen(const GLFWvidmode &videoMode, GLFWmonitor *monito
 
 void GLViewImpl::setWindowed(int width, int height) {
     if (!this->isFullscreen()) {
-        this->setFrameSize((float)width, (float)height);
+        this->setFrameSize(width, height);
     } else {
         const GLFWvidmode* videoMode = glfwGetVideoMode(_monitor);
         int xpos = 0, ypos = 0;
         glfwGetMonitorPos(_monitor, &xpos, &ypos);
-        xpos += (int)((videoMode->width - width) * 0.5f);
-        ypos += (int)((videoMode->height - height) * 0.5f);
+        xpos += (videoMode->width - width) * 0.5;
+        ypos += (videoMode->height - height) * 0.5;
         _monitor = nullptr;
         glfwSetWindowMonitor(_mainWindow, nullptr, xpos, ypos, width, height, GLFW_DONT_CARE);
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)
@@ -614,7 +634,7 @@ Size GLViewImpl::getMonitorSize() const {
     }
     if (nullptr != monitor) {
         const GLFWvidmode* videoMode = glfwGetVideoMode(monitor);
-        Size size = Size((float)videoMode->width, (float)videoMode->height);
+        Size size = Size(videoMode->width, videoMode->height);
         return size;
     }
     return Size::ZERO;
@@ -630,27 +650,27 @@ void GLViewImpl::updateFrameSize()
         int frameBufferW = 0, frameBufferH = 0;
         glfwGetFramebufferSize(_mainWindow, &frameBufferW, &frameBufferH);
 
-        // if (frameBufferW == 2 * w && frameBufferH == 2 * h)
-        // {
-        //     if (_isRetinaEnabled)
-        //     {
-        //         _retinaFactor = 1;
-        //     }
-        //     else
-        //     {
-        //         _retinaFactor = 2;
-        //     }
-        //     glfwSetWindowSize(_mainWindow, _screenSize.width/2 * _retinaFactor * _frameZoomFactor, _screenSize.height/2 * _retinaFactor * _frameZoomFactor);
+        if (frameBufferW == 2 * w && frameBufferH == 2 * h)
+        {
+            if (_isRetinaEnabled)
+            {
+                _retinaFactor = 1;
+            }
+            else
+            {
+                _retinaFactor = 2;
+            }
+            glfwSetWindowSize(_mainWindow, _screenSize.width/2 * _retinaFactor * _frameZoomFactor, _screenSize.height/2 * _retinaFactor * _frameZoomFactor);
 
-        //     _isInRetinaMonitor = true;
-        // }
-        // else
+            _isInRetinaMonitor = true;
+        }
+        else
         {
             if (_isInRetinaMonitor)
             {
                 _retinaFactor = 1;
             }
-            glfwSetWindowSize(_mainWindow, (int)(_screenSize.width * _retinaFactor * _frameZoomFactor), (int)(_screenSize.height *_retinaFactor * _frameZoomFactor));
+            glfwSetWindowSize(_mainWindow, _screenSize.width * _retinaFactor * _frameZoomFactor, _screenSize.height *_retinaFactor * _frameZoomFactor);
 
             _isInRetinaMonitor = false;
         }
@@ -665,34 +685,29 @@ void GLViewImpl::setFrameSize(float width, float height)
 
 void GLViewImpl::setViewPortInPoints(float x , float y , float w , float h)
 {
-    Viewport vp;
-    vp.x = (int)(x * _scaleX * _retinaFactor * _frameZoomFactor + _viewPortRect.origin.x * _retinaFactor * _frameZoomFactor);
-    vp.y = (int)(y * _scaleY * _retinaFactor  * _frameZoomFactor + _viewPortRect.origin.y * _retinaFactor * _frameZoomFactor);
-    vp.w = (unsigned int)(w * _scaleX * _retinaFactor * _frameZoomFactor);
-    vp.h = (unsigned int)(h * _scaleY * _retinaFactor * _frameZoomFactor);
+    experimental::Viewport vp((float)(x * _scaleX * _retinaFactor * _frameZoomFactor + _viewPortRect.origin.x * _retinaFactor * _frameZoomFactor),
+        (float)(y * _scaleY * _retinaFactor  * _frameZoomFactor + _viewPortRect.origin.y * _retinaFactor * _frameZoomFactor),
+        (float)(w * _scaleX * _retinaFactor * _frameZoomFactor),
+        (float)(h * _scaleY * _retinaFactor * _frameZoomFactor));
     Camera::setDefaultViewport(vp);
 }
 
 void GLViewImpl::setScissorInPoints(float x , float y , float w , float h)
 {
-    auto x1 = (int)(x * _scaleX * _retinaFactor * _frameZoomFactor + _viewPortRect.origin.x * _retinaFactor * _frameZoomFactor);
-    auto y1 = (int)(y * _scaleY * _retinaFactor  * _frameZoomFactor + _viewPortRect.origin.y * _retinaFactor * _frameZoomFactor);
-    auto width1 = (unsigned int)(w * _scaleX * _retinaFactor * _frameZoomFactor);
-    auto height1 = (unsigned int)(h * _scaleY * _retinaFactor * _frameZoomFactor);
-    auto renderer = Director::getInstance()->getRenderer();
-    renderer->setScissorRect(x1, y1, width1, height1);
-
+    glScissor((GLint)(x * _scaleX * _retinaFactor * _frameZoomFactor + _viewPortRect.origin.x * _retinaFactor * _frameZoomFactor),
+               (GLint)(y * _scaleY * _retinaFactor  * _frameZoomFactor + _viewPortRect.origin.y * _retinaFactor * _frameZoomFactor),
+               (GLsizei)(w * _scaleX * _retinaFactor * _frameZoomFactor),
+               (GLsizei)(h * _scaleY * _retinaFactor * _frameZoomFactor));
 }
 
 Rect GLViewImpl::getScissorRect() const
 {
-    auto renderer = Director::getInstance()->getRenderer();
-    auto& rect = renderer->getScissorRect();
-
-    float x = (rect.x - _viewPortRect.origin.x * _retinaFactor * _frameZoomFactor) / (_scaleX * _retinaFactor * _frameZoomFactor);
-    float y = (rect.y - _viewPortRect.origin.y * _retinaFactor * _frameZoomFactor) / (_scaleY * _retinaFactor  * _frameZoomFactor);
-    float w = rect.width / (_scaleX * _retinaFactor * _frameZoomFactor);
-    float h = rect.height / (_scaleY * _retinaFactor  * _frameZoomFactor);
+    GLfloat params[4];
+    glGetFloatv(GL_SCISSOR_BOX, params);
+    float x = (params[0] - _viewPortRect.origin.x * _retinaFactor * _frameZoomFactor) / (_scaleX * _retinaFactor * _frameZoomFactor);
+    float y = (params[1] - _viewPortRect.origin.y * _retinaFactor * _frameZoomFactor) / (_scaleY * _retinaFactor  * _frameZoomFactor);
+    float w = params[2] / (_scaleX * _retinaFactor * _frameZoomFactor);
+    float h = params[3] / (_scaleY * _retinaFactor  * _frameZoomFactor);
     return Rect(x, y, w, h);
 }
 
@@ -890,7 +905,7 @@ void GLViewImpl::onGLFWframebuffersize(GLFWwindow* window, int w, int h)
             _retinaFactor = 2;
         }
 
-        glfwSetWindowSize(window, static_cast<int>(frameSizeW * 0.5f * _retinaFactor * _frameZoomFactor), static_cast<int>(frameSizeH * 0.5f * _retinaFactor * _frameZoomFactor));
+        glfwSetWindowSize(window, static_cast<int>(frameSizeW * 0.5f * _retinaFactor * _frameZoomFactor) , static_cast<int>(frameSizeH * 0.5f * _retinaFactor * _frameZoomFactor));
     }
     else if (std::abs(factorX - 2.0f) < FLT_EPSILON && std::abs(factorY - 2.0f) < FLT_EPSILON)
     {
@@ -907,8 +922,8 @@ void GLViewImpl::onGLFWWindowSizeFunCallback(GLFWwindow* /*window*/, int width, 
         Size baseDesignSize = _designResolutionSize;
         ResolutionPolicy baseResolutionPolicy = _resolutionPolicy;
 
-        float frameWidth = width / _frameZoomFactor;
-        float frameHeight = height / _frameZoomFactor;
+        int frameWidth = width / _frameZoomFactor;
+        int frameHeight = height / _frameZoomFactor;
         setFrameSize(frameWidth, frameHeight);
         setDesignResolutionSize(baseDesignSize.width, baseDesignSize.height, baseResolutionPolicy);
         Director::getInstance()->setViewport();
@@ -1007,7 +1022,6 @@ static bool glew_dynamic_binding()
 // helper
 bool GLViewImpl::initGlew()
 {
-
 #if (CC_TARGET_PLATFORM != CC_PLATFORM_MAC)
     GLenum GlewInitResult = glewInit();
     if (GLEW_OK != GlewInitResult)
@@ -1034,16 +1048,15 @@ bool GLViewImpl::initGlew()
         log("OpenGL 2.0 not supported");
     }
 
-
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
     if(glew_dynamic_binding() == false)
     {
         ccMessageBox("No OpenGL framebuffer support. Please upgrade the driver of your video card.", "OpenGL error");
         return false;
     }
-#endif //#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
+#endif
 
-#endif //#if (CC_TARGET_PLATFORM != CC_PLATFORM_MAC)
+#endif // (CC_TARGET_PLATFORM != CC_PLATFORM_MAC)
 
     return true;
 }

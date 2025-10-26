@@ -23,7 +23,11 @@ Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
-#pragma once
+#ifndef __CC_FILEUTILS_ANDROID_H__
+#define __CC_FILEUTILS_ANDROID_H__
+
+#include "platform/CCPlatformConfig.h"
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
 
 #include "platform/CCFileUtils.h"
 #include "platform/CCPlatformMacros.h"
@@ -72,6 +76,8 @@ public:
     
     virtual long getFileSize(const std::string& filepath) const override;
     virtual std::vector<std::string> listFiles(const std::string& dirPath) const override;
+
+    virtual bool removeDirectory(const std::string& dirPath) const override;
 private:
     virtual bool isFileExistInternal(const std::string& strFilePath) const override;
     virtual bool isDirectoryExistInternal(const std::string& dirPath) const override;
@@ -84,3 +90,7 @@ private:
 /// @}
 
 NS_CC_END
+
+#endif // CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+
+#endif // __CC_FILEUTILS_ANDROID_H__

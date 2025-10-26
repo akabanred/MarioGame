@@ -663,7 +663,7 @@ void ControlButton::onTouchEnded(Touch *pTouch, Event* /*pEvent*/)
     }
 }
 
-void ControlButton::setOpacity(uint8_t opacity)
+void ControlButton::setOpacity(GLubyte opacity)
 {
     Control::setOpacity(opacity);
     
@@ -678,7 +678,7 @@ void ControlButton::setOpacity(uint8_t opacity)
     }
 }
 
-void ControlButton::updateDisplayedOpacity(uint8_t parentOpacity)
+void ControlButton::updateDisplayedOpacity(GLubyte parentOpacity)
 {
     Control::updateDisplayedOpacity(parentOpacity);
 

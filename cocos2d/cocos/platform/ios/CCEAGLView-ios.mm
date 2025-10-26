@@ -63,14 +63,14 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 #import "platform/ios/CCEAGLView-ios.h"
 
 #import <QuartzCore/QuartzCore.h>
-#import <Metal/Metal.h>
 
 #import "base/CCDirector.h"
 #import "base/CCTouch.h"
 #import "base/CCIMEDispatcher.h"
-#import "renderer/backend/metal/DeviceMTL.h"
+#import "platform/ios/CCGLViewImpl-ios.h"
+#import "platform/ios/CCES2Renderer-ios.h"
+#import "platform/ios/OpenGL_Internal-ios.h"
 #import "platform/ios/CCInputView-ios.h"
-#include "renderer/backend/metal/Utils.h"
 
 //CLASS IMPLEMENTATIONS:
 
@@ -87,6 +87,7 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 
 @synthesize surfaceSize=size_;
 @synthesize pixelFormat=pixelformat_, depthFormat=depthFormat_;
+@synthesize context=context_;
 @synthesize multiSampling=multiSampling_;
 @synthesize keyboardShowNotification = keyboardShowNotification_;
 @synthesize isKeyboardShown;
@@ -94,7 +95,7 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 
 + (Class) layerClass
 {
-    return [CAMetalLayer class];
+    return [CAEAGLLayer class];
 }
 
 + (id) viewWithFrame:(CGRect)frame
@@ -132,6 +133,15 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
     if((self = [super initWithFrame:frame]))
     {
         self.textInputView = [[CCInputView alloc] initWithFrame:frame];
+        pixelformat_ = format;
+        depthFormat_ = depth;
+        multiSampling_ = sampling;
+        requestedSamples_ = nSamples;
+        preserveBackbuffer_ = retained;
+        if( ! [self setupSurfaceWithSharegroup:sharegroup] ) {
+            [self release];
+            return nil;
+        }
 
         originalRect_ = self.frame;
         self.keyboardShowNotification = nil;
@@ -139,18 +149,6 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
         {
             self.contentScaleFactor = [[UIScreen mainScreen] scale];
         }
-
-        id<MTLDevice> device = MTLCreateSystemDefaultDevice();
-        if (!device)
-        {
-             CCLOG("Doesn't support metal.");
-             return nil;
-        }
-        CAMetalLayer* metalLayer = (CAMetalLayer*)[self layer];
-        metalLayer.device = device;
-        metalLayer.pixelFormat = MTLPixelFormatBGRA8Unorm;
-        metalLayer.framebufferOnly = YES;
-        cocos2d::backend::DeviceMTL::setCAMetalLayer(metalLayer);
     }
     
     return self;
@@ -158,10 +156,20 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 
 -(id) initWithCoder:(NSCoder *)aDecoder
 {
-    if ( (self = [super initWithCoder:aDecoder]) )
-    {
-        size_ = [self bounds].size;
+    if( (self = [super initWithCoder:aDecoder]) ) {
         self.textInputView = [[CCInputView alloc] initWithCoder:aDecoder];
+        CAEAGLLayer* eaglLayer = (CAEAGLLayer*)[self layer];
+        
+        pixelformat_ = kEAGLColorFormatRGB565;
+        depthFormat_ = 0; // GL_DEPTH_COMPONENT24_OES;
+        multiSampling_= NO;
+        requestedSamples_ = 0;
+        size_ = [eaglLayer bounds].size;
+        
+        if( ! [self setupSurfaceWithSharegroup:nil] ) {
+            [self release];
+            return nil;
+        }
     }
     
     return self;
@@ -180,9 +188,44 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
     return (int)bound.height * self.contentScaleFactor;
 }
 
+
+-(BOOL) setupSurfaceWithSharegroup:(EAGLSharegroup*)sharegroup
+{
+    CAEAGLLayer *eaglLayer = (CAEAGLLayer *)self.layer;
+    
+    eaglLayer.opaque = YES;
+    eaglLayer.drawableProperties = [NSDictionary dictionaryWithObjectsAndKeys:
+                                    [NSNumber numberWithBool:preserveBackbuffer_], kEAGLDrawablePropertyRetainedBacking,
+                                    pixelformat_, kEAGLDrawablePropertyColorFormat, nil];
+    
+    
+    renderer_ = [[CCES2Renderer alloc] initWithDepthFormat:depthFormat_
+                                         withPixelFormat:[self convertPixelFormat:pixelformat_]
+                                          withSharegroup:sharegroup
+                                       withMultiSampling:multiSampling_
+                                     withNumberOfSamples:requestedSamples_];
+    
+    NSAssert(renderer_, @"OpenGL ES 2.O is required.");
+    if (!renderer_)
+        return NO;
+    
+    context_ = [renderer_ context];
+    
+    #if GL_EXT_discard_framebuffer == 1
+        discardFramebufferSupported_ = YES;
+    #else
+        discardFramebufferSupported_ = NO;
+    #endif
+    
+    CHECK_GL_ERROR();
+    
+    return YES;
+}
+
 - (void) dealloc
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self]; // remove keyboard notification
+    [renderer_ release];
     [self.textInputView release];
     [super dealloc];
 }
@@ -190,15 +233,23 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 - (void) layoutSubviews
 {
     if (!cocos2d::Director::getInstance()->isValid())
+    {
         return;
+    }
+    
+    [renderer_ resizeFromLayer:(CAEAGLLayer*)self.layer];
+    size_ = [renderer_ backingSize];
 
-    size_ = [self bounds].size;
-    size_.width *= self.contentScaleFactor;
-    size_.height *= self.contentScaleFactor;
-
-    cocos2d::backend::Utils::resizeDefaultAttachmentTexture(size_.width, size_.height);
+    // Issue #914 #924
+//     Director *director = [Director sharedDirector];
+//     [director reshapeProjection:size_];
+    cocos2d::Size size;
+    size.width = size_.width;
+    size.height = size_.height;
+    //cocos2d::Director::getInstance()->reshapeProjection(size);
 
     // Avoid flicker. Issue #350
+    //[director performSelectorOnMainThread:@selector(drawScene) withObject:nil waitUntilDone:YES];
     if ([NSThread isMainThread])
     {
         cocos2d::Director::getInstance()->drawScene();
@@ -207,6 +258,77 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 
 - (void) swapBuffers
 {
+    // IMPORTANT:
+    // - preconditions
+    //    -> context_ MUST be the OpenGL context
+    //    -> renderbuffer_ must be the RENDER BUFFER
+
+#ifdef __IPHONE_4_0
+    
+    if (multiSampling_)
+    {
+        /* Resolve from msaaFramebuffer to resolveFramebuffer */
+        //glDisable(GL_SCISSOR_TEST);     
+        glBindFramebuffer(GL_READ_FRAMEBUFFER_APPLE, [renderer_ msaaFrameBuffer]);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER_APPLE, [renderer_ defaultFrameBuffer]);
+        glResolveMultisampleFramebufferAPPLE();
+    }
+    
+    if(discardFramebufferSupported_)
+    {    
+        if (multiSampling_)
+        {
+            if (depthFormat_)
+            {
+                GLenum attachments[] = {GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT};
+                glDiscardFramebufferEXT(GL_READ_FRAMEBUFFER_APPLE, 2, attachments);
+            }
+            else
+            {
+                GLenum attachments[] = {GL_COLOR_ATTACHMENT0};
+                glDiscardFramebufferEXT(GL_READ_FRAMEBUFFER_APPLE, 1, attachments);
+            }
+            
+            glBindRenderbuffer(GL_RENDERBUFFER, [renderer_ colorRenderBuffer]);
+    
+        }    
+        
+        // not MSAA
+        else if (depthFormat_ ) {
+            GLenum attachments[] = { GL_DEPTH_ATTACHMENT};
+            glDiscardFramebufferEXT(GL_FRAMEBUFFER, 1, attachments);
+        }
+    }
+    
+#endif // __IPHONE_4_0
+    
+     if(![context_ presentRenderbuffer:GL_RENDERBUFFER])
+        {
+//         CCLOG(@"cocos2d: Failed to swap renderbuffer in %s\n", __FUNCTION__);
+        }
+
+#if COCOS2D_DEBUG
+    CHECK_GL_ERROR();
+#endif
+    
+    // We can safely re-bind the framebuffer here, since this will be the
+    // 1st instruction of the new main loop
+    if( multiSampling_ )
+        glBindFramebuffer(GL_FRAMEBUFFER, [renderer_ msaaFrameBuffer]);    
+}
+
+- (unsigned int) convertPixelFormat:(NSString*) pixelFormat
+{
+    // define the pixel format
+    GLenum pFormat;
+    
+    
+    if([pixelFormat isEqualToString:@"EAGLColorFormat565"]) 
+        pFormat = GL_RGB565;
+    else 
+        pFormat = GL_RGBA8_OES;
+    
+    return pFormat;
 }
 
 #pragma mark CCEAGLView - Point conversion

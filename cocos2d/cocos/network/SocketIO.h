@@ -166,6 +166,14 @@ public:
      */
     static SIOClient* connect(const std::string& uri, SocketIO::SIODelegate& delegate, const std::string& caFilePath);
 
+    /**
+     *  Static client creation method, similar to socketio.connect(uri) in JS.
+     *  @param  delegate the delegate which want to receive events from the socket.io client.
+     *  @param  uri      the URI of the socket.io server.
+     *  @return SIOClient* an initialized SIOClient if connected successfully, otherwise nullptr.
+     */
+    CC_DEPRECATED_ATTRIBUTE  static SIOClient* connect(SocketIO::SIODelegate& delegate, const std::string& uri);
+
 private:
 
     SocketIO();
@@ -182,7 +190,7 @@ private:
 
     friend class SIOClientImpl;
 private:
-    CC_DISALLOW_COPY_AND_ASSIGN(SocketIO)
+    CC_DISALLOW_COPY_AND_ASSIGN(SocketIO);
 };
 
 //c++11 style callbacks entities will be created using CC_CALLBACK (which uses std::bind)
@@ -269,7 +277,7 @@ public:
      * @param eventName the name of event.
      * @param e the callback function.
      */
-    void on(const std::string& eventName, SIOEvent e);
+    void on(const std::string& eventName, const SIOEvent& e);
 
     /**
      * Set tag of SIOClient.

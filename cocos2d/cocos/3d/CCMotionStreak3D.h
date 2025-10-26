@@ -28,9 +28,6 @@ THE SOFTWARE.
 #include "base/CCProtocols.h"
 #include "2d/CCNode.h"
 #include "renderer/CCCustomCommand.h"
-#include "renderer/CCCallbackCommand.h"
-
-#include <vector>
 
 NS_CC_BEGIN
 
@@ -138,8 +135,8 @@ public:
     * @lua NA
     */
     virtual const BlendFunc& getBlendFunc() const override;
-    virtual uint8_t getOpacity() const override;
-    virtual void setOpacity(uint8_t opacity) override;
+    virtual GLubyte getOpacity() const override;
+    virtual void setOpacity(GLubyte opacity) override;
     virtual void setOpacityModifyRGB(bool value) override;
     virtual bool isOpacityModifyRGB() const override;
     
@@ -166,15 +163,7 @@ CC_CONSTRUCTOR_ACCESS:
 
 protected:
     //renderer callback
-
-    void initCustomCommand();
-
-    struct VertexData
-    {
-        Vec3 pos;
-        Color4B color;
-        Tex2F texPos;
-    };
+    void onDraw(const Mat4 &transform, uint32_t flags);
 
     bool _startingPositionInitialized;
 
@@ -195,25 +184,18 @@ protected:
     unsigned int _previousNuPoints;
 
     /** Pointers */
-    std::vector<Vec3> _pointVertexes;
-    std::vector<float> _pointState;
+    Vec3* _pointVertexes;
+    float* _pointState;
 
-    std::vector<VertexData> _vertexData;
+    // Opengl
+    Vec3* _vertices;
+    GLubyte* _colorPointer;
+    Tex2F* _texCoords;
     
     CustomCommand _customCommand;
+
 private:
     CC_DISALLOW_COPY_AND_ASSIGN(MotionStreak3D);
-
-    CallbackCommand _beforeCommand;
-    CallbackCommand _afterCommand;
-    backend::UniformLocation _locMVP;
-    backend::UniformLocation _locTexture;
-
-    void onBeforeDraw();
-    void onAfterDraw();
-
-    backend::CullMode _rendererCullface;
-    bool _rendererDepthTest;
 };
 
 // end of _3d group

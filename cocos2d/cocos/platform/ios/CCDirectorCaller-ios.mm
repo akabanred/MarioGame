@@ -23,6 +23,10 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
+
+#include "platform/CCPlatformConfig.h"
+#if CC_TARGET_PLATFORM == CC_PLATFORM_IOS
+
 #include <mach/mach_time.h>
 
 #import "platform/ios/CCDirectorCaller-ios.h"
@@ -72,6 +76,8 @@ static id s_sharedDirectorCaller;
         NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
         [nc addObserver:self selector:@selector(appDidBecomeActive) name:UIApplicationDidBecomeActiveNotification object:nil];
         [nc addObserver:self selector:@selector(appDidBecomeInactive) name:UIApplicationWillResignActiveNotification object:nil];
+        [nc addObserver:self selector:@selector(appDidBecomeActive) name:UIApplicationWillEnterForegroundNotification object:nil];
+        [nc addObserver:self selector:@selector(appDidBecomeInactive) name:UIApplicationDidEnterBackgroundNotification object:nil];
         
         self.interval = 1;
     }
@@ -132,6 +138,12 @@ static id s_sharedDirectorCaller;
 {
     if (isAppActive) {
         cocos2d::Director* director = cocos2d::Director::getInstance();
+        EAGLContext* cocos2dxContext = [(CCEAGLView*)director->getOpenGLView()->getEAGLView() context];
+        if (cocos2dxContext != [EAGLContext currentContext])
+            glFlush();
+        
+        [EAGLContext setCurrentContext: cocos2dxContext];
+
         CFTimeInterval dt = ((CADisplayLink*)displayLink).timestamp - lastDisplayTime;
         lastDisplayTime = ((CADisplayLink*)displayLink).timestamp;
         director->mainLoop(dt);
@@ -148,4 +160,13 @@ static id s_sharedDirectorCaller;
     lastDisplayTime = (mach_absolute_time() / clockFrequency) - ((1.0 / 60) * self.interval);
 }
 
+//
+-(void)setActive:(BOOL)isActive
+{
+    isAppActive = isActive;
+}
+
 @end
+
+#endif // CC_TARGET_PLATFORM == CC_PLATFORM_IOS
+

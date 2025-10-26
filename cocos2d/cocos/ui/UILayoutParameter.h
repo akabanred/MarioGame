@@ -110,6 +110,13 @@ public:
 
 };
 
+
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WINRT)
+#ifdef RELATIVE
+#undef RELATIVE
+#endif
+#endif
+
 /**
  *@brief Base class for various LayoutParameter.
  */

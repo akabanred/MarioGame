@@ -274,6 +274,9 @@ public:
      * @return A Vec2 object.
      */
     static Vec2 getPolygonCenter(const Vec2* points, int count);
+
+    /** @deprecated use getPolygonCenter() instead */
+    CC_DEPRECATED_ATTRIBUTE static Vec2 getPolyonCenter(const Vec2* points, int count);
     
     /**
      * Set a mask that defines which categories this physics body belongs to.
@@ -388,7 +391,7 @@ public:
      * @param   offset A Vec2 object, it is the offset from the body's center of gravity in body local coordinates.
      * @return  An autoreleased PhysicsShapeCircle object pointer.
      */
-    static PhysicsShapeCircle* create(float radius, const PhysicsMaterial& material = PHYSICSSHAPE_MATERIAL_DEFAULT, const Vec2& offset = Vec2(0.0f, 0.0f));
+    static PhysicsShapeCircle* create(float radius, const PhysicsMaterial& material = PHYSICSSHAPE_MATERIAL_DEFAULT, const Vec2& offset = Vec2(0, 0));
     
     /**
      * Calculate the area of a circle with specified radius.

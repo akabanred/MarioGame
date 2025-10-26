@@ -69,7 +69,7 @@ public:
     *@param: groupName, key
     *@param: boneSkinNameMap, map <name of bone, name of skin to display which added to bone>
     */
-    void addSkinGroup(std::string groupName, std::map<std::string, std::string> boneSkinNameMap);
+    void addSkinGroup(const std::string& groupName, const std::map<std::string, std::string>& boneSkinNameMap);
 
     cocos2d::Rect getBoundingBox() const override;
 
@@ -84,19 +84,15 @@ protected:
 
     virtual void visit(cocos2d::Renderer *renderer, const cocos2d::Mat4& parentTransform, uint32_t parentFlags) override;
     virtual void draw(cocos2d::Renderer *renderer, const cocos2d::Mat4 &transform, uint32_t flags) override;
+    virtual void onDraw(const cocos2d::Mat4 &transform, uint32_t flags) override;
 
 protected:
     cocos2d::Map<std::string, BoneNode*> _subBonesMap;
 
 private:
-    struct VertexData
-    {
-        cocos2d::Vec3 vertex;
-        cocos2d::Color4F color;
-    };
-
-    cocos2d::Vec2 _squareVertices[8];
-    VertexData _vertexData[8];
+    cocos2d::Vec2          _squareVertices[8];
+    cocos2d::Color4F       _squareColors[8];
+    cocos2d::Vec3          _noMVPVertices[8];
 
     std::map<std::string, std::map<std::string, std::string> > _skinGroupMap; // map< suit name, map< bone name, skin name> >
     CC_DISALLOW_COPY_AND_ASSIGN(SkeletonNode);
@@ -110,11 +106,12 @@ private:
     // for batch draw sub bones
     bool                           _subBonesDirty;
     bool                           _subBonesOrderDirty;
-    std::vector<VertexData> _batchedBoneVertexData;
+    std::vector<cocos2d::Vec3>     _batchedBoneVetices;
+    std::vector<cocos2d::Color4F>  _batchedBoneColors;
     int                            _batchedVeticesCount;
     cocos2d::CustomCommand         _batchBoneCommand;
 
-    void batchDrawAllSubBones();
+    void batchDrawAllSubBones(const cocos2d::Mat4 &transform);
 };
 
 NS_TIMELINE_END

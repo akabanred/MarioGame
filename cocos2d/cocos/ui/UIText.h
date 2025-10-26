@@ -104,6 +104,10 @@ public:
      *
      * @param text  String value.
      */
+    CC_DEPRECATED_ATTRIBUTE void setText(const std::string& text)
+    {
+        this->setString(text);
+    }
     void setString(const std::string& text);
 
     /**
@@ -111,6 +115,10 @@ public:
      *
      * @return String value.
      */
+    CC_DEPRECATED_ATTRIBUTE const std::string& getStringValue()
+    {
+        return this->getString();
+    }
     const std::string& getString()const;
 
     /**
@@ -326,7 +334,7 @@ public:
     /**
      * Sets the source blending function.
      *
-     * @param blendFunc A structure with source and destination factor to specify pixel arithmetic. e.g. {BlendFactor::ONE, BlendFactor::ONE}, {BlendFactor::SRC_ALPHA, BlendFactor::ONE_MINUS_SRC_ALPHA}.
+     * @param blendFunc A structure with source and destination factor to specify pixel arithmetic. e.g. {GL_ONE, GL_ONE}, {GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA}.
      * @js NA
      * @lua NA
      */

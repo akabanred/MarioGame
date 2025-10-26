@@ -43,6 +43,33 @@ namespace ui {
 class ScrollViewBar;
 
 /**
+ *Scrollview scroll event type.
+ *@deprecated use @see `ScrollView::EventType` instead.
+ */
+typedef enum
+{
+    SCROLLVIEW_EVENT_SCROLL_TO_TOP,
+    SCROLLVIEW_EVENT_SCROLL_TO_BOTTOM,
+    SCROLLVIEW_EVENT_SCROLL_TO_LEFT,
+    SCROLLVIEW_EVENT_SCROLL_TO_RIGHT,
+    SCROLLVIEW_EVENT_SCROLLING,
+    SCROLLVIEW_EVENT_BOUNCE_TOP,
+    SCROLLVIEW_EVENT_BOUNCE_BOTTOM,
+    SCROLLVIEW_EVENT_BOUNCE_LEFT,
+    SCROLLVIEW_EVENT_BOUNCE_RIGHT,
+	SCROLLVIEW_EVENT_SCROLLING_BEGAN,
+	SCROLLVIEW_EVENT_SCROLLING_ENDED,
+    SCROLLVIEW_EVENT_AUTOSCROLL_ENDED
+}ScrollviewEventType;
+
+/**
+ * A callback which would be called when a ScrollView is scrolling.
+ *@deprecated Use @see `ccScrollViewCallback` instead.
+ */
+typedef void (Ref::*SEL_ScrollViewEvent)(Ref*, ScrollviewEventType);
+#define scrollvieweventselector(_SELECTOR) (SEL_ScrollViewEvent)(&_SELECTOR)
+
+/**
  * Layout container for a view hierarchy that can be scrolled by the user, allowing it to be larger than the physical display.
  * It holds a inner `Layout` container for storing child items horizontally or vertically.
  */
@@ -334,6 +361,14 @@ public:
 
     /**
      * Add callback function which will be called  when scrollview event triggered.
+     * @deprecated Use @see `addEventListener` instead.
+     * @param target A pointer of `Ref*` type.
+     * @param selector A member function pointer with type of `SEL_ScrollViewEvent`.
+     */
+    CC_DEPRECATED_ATTRIBUTE void addEventListenerScrollView(Ref* target, SEL_ScrollViewEvent selector);
+
+    /**
+     * Add callback function which will be called  when scrollview event triggered.
      * @param callback A callback function with type of `ccScrollViewCallback`.
      */
     virtual void addEventListener(const ccScrollViewCallback& callback);
@@ -468,14 +503,14 @@ public:
      *
      * @param the scroll bar's opacity
      */
-    void setScrollBarOpacity(uint8_t opacity);
+    void setScrollBarOpacity(GLubyte opacity);
     
     /**
      * @brief Get the scroll bar's opacity
      *
      * @return the scroll bar's opacity
      */
-    uint8_t getScrollBarOpacity() const;
+    GLubyte getScrollBarOpacity() const;
     
     /**
      * @brief Set scroll bar auto hide state
@@ -627,8 +662,8 @@ protected:
     void processScrollEvent(MoveDirection dir, bool bounce);
     void processScrollingEvent();
 	void processScrollingEndedEvent();
-    void dispatchEvent(EventType eventType);
-
+    void dispatchEvent(ScrollviewEventType scrollEventType, EventType eventType);
+    
     void updateScrollBar(const Vec2& outOfBoundary);
 	
 protected:
@@ -677,6 +712,18 @@ protected:
     ScrollViewBar* _horizontalScrollBar;
     
     Ref* _scrollViewEventListener;
+#if defined(__GNUC__) && ((__GNUC__ >= 4) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)))
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#elif _MSC_VER >= 1400 //vs 2005 or higher
+#pragma warning (push)
+#pragma warning (disable: 4996)
+#endif
+    SEL_ScrollViewEvent _scrollViewEventSelector;
+#if defined(__GNUC__) && ((__GNUC__ >= 4) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)))
+#pragma GCC diagnostic warning "-Wdeprecated-declarations"
+#elif _MSC_VER >= 1400 //vs 2005 or higher
+#pragma warning (pop)
+#endif
     ccScrollViewCallback _eventCallback;
 };
 

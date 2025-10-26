@@ -62,6 +62,15 @@ THE SOFTWARE.
 
 #include "base/ccConfig.h"
 
+/** @def CC_SWAP
+simple macro that swaps 2 variables
+ @deprecated use std::swap() instead
+*/
+#define CC_SWAP(x, y, type)    \
+{    type temp = (x);        \
+    x = y; y = temp;        \
+}
+
 #include "base/ccRandom.h"
 
 /** @def CCRANDOM_MINUS1_1
@@ -90,8 +99,8 @@ THE SOFTWARE.
 /** @def CC_BLEND_SRC
 default gl blend src function. Compatible with premultiplied alpha images.
 */
-#define CC_BLEND_SRC cocos2d::backend::BlendFactor::ONE
-#define CC_BLEND_DST cocos2d::backend::BlendFactor::ONE_MINUS_SRC_ALPHA
+#define CC_BLEND_SRC GL_ONE
+#define CC_BLEND_DST GL_ONE_MINUS_SRC_ALPHA
 
 
 /** @def CC_NODE_DRAW_SETUP
@@ -243,16 +252,7 @@ It should work same as apples CFSwapInt32LittleToHost(..)
             cocos2d::log("OpenGL error 0x%04X in %s %s %d\n", __error, __FILE__, __FUNCTION__, __LINE__); \
         } \
     } while (false)
-#define CHECK_GL_ERROR_ABORT() \
-    do { \
-        GLenum __error = glGetError(); \
-        if(__error) { \
-            cocos2d::log("OpenGL error 0x%04X in %s %s %d\n", __error, __FILE__, __FUNCTION__, __LINE__); \
-            assert(false);\
-        } \
-    } while (false)
 #endif
-
 
 /**
  * GL assertion that can be used for any OpenGL function call.

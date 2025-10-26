@@ -27,45 +27,24 @@
  - OGRE3D: http://www.ogre3d.org/
  - Qt3D: http://qt-project.org/
  ****************************************************************************/
+
 #include "renderer/CCMaterial.h"
 #include "renderer/CCTechnique.h"
 #include "renderer/CCPass.h"
 #include "renderer/CCTextureCache.h"
 #include "renderer/CCTexture2D.h"
-#include "renderer/backend/Device.h"
+#include "renderer/CCGLProgram.h"
+#include "renderer/CCGLProgramState.h"
 #include "base/CCProperties.h"
 #include "base/CCDirector.h"
 #include "platform/CCFileUtils.h"
-#include "base/CCConsole.h"
 
-#include <sstream>
 
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) || (CC_TARGET_PLATFORM == CC_PLATFORM_WINRT)
 #define strcasecmp _stricmp
 #endif
 
 NS_CC_BEGIN
-
-namespace {
-    std::string replaceDefines(const std::string &compileTimeDefines) {
-
-        auto defineParts = Console::Utility::split(compileTimeDefines, ';');
-        std::stringstream ss;
-        for (auto &p : defineParts)
-        {
-            if (p.find("#define ") == std::string::npos)
-            {
-                ss << "#define " << p << std::endl;
-            }
-            else
-            {
-                ss << p << std::endl;
-            }
-        }
-        return ss.str();
-
-    }
-}
 
 // Helpers declaration
 static const char* getOptionalString(Properties* properties, const char* key, const char* defaultValue);
@@ -74,7 +53,7 @@ static bool isValidUniform(const char* name);
 Material* Material::createWithFilename(const std::string& filepath)
 {
     auto validfilename = FileUtils::getInstance()->fullPathForFilename(filepath);
-    if (validfilename.size() > 0) {
+    if (!validfilename.empty()) {
         auto mat = new (std::nothrow) Material();
         if (mat && mat->initWithFile(validfilename))
         {
@@ -97,12 +76,12 @@ Material* Material::createWithProperties(Properties* materialProperties)
     return nullptr;
 }
 
-Material* Material::createWithProgramState(backend::ProgramState* programState)
+Material* Material::createWithGLStateProgram(GLProgramState* programState)
 {
-    CCASSERT(programState, "Invalid Program State");
+    CCASSERT(programState, "Invalid GL Program State");
 
     auto mat = new (std::nothrow) Material();
-    if (mat && mat->initWithProgramState(programState))
+    if (mat && mat->initWithGLProgramState(programState))
     {
         mat->autorelease();
         return mat;
@@ -111,9 +90,9 @@ Material* Material::createWithProgramState(backend::ProgramState* programState)
     return nullptr;
 }
 
-bool Material::initWithProgramState(backend::ProgramState *state)
+bool Material::initWithGLProgramState(cocos2d::GLProgramState *state)
 {
-    auto technique = Technique::createWithProgramState(this, state);
+    auto technique = Technique::createWithGLProgramState(this, state);
     if (technique) {
         _techniques.pushBack(technique);
 
@@ -142,19 +121,6 @@ bool Material::initWithProperties(Properties* materialProperties)
     return parseProperties(materialProperties);
 }
 
-void Material::draw(MeshCommand* meshCommands, float globalZOrder, backend::Buffer* vertexBuffer, backend::Buffer* indexBuffer,
-                    CustomCommand::PrimitiveType primitive, CustomCommand::IndexFormat indexFormat,
-                    unsigned int indexCount, const Mat4& modelView)
-{
-    int i = 0;
-    for (const auto& pass: _currentTechnique->_passes)
-    {
-        pass->draw(&meshCommands[i], globalZOrder, vertexBuffer, indexBuffer,primitive, indexFormat, indexCount, modelView);
-        i++;
-    }
-}
-
-
 void Material::setTarget(cocos2d::Node *target)
 {
     _target = target;
@@ -173,7 +139,7 @@ bool Material::parseProperties(Properties* materialProperties)
         }
         else if (strcmp(name, "renderState") == 0)
         {
-            parseRenderState(&_renderState.getStateBlock(), space);
+            parseRenderState(this, space);
         }
 
         space = materialProperties->getNextNamespace();
@@ -206,7 +172,7 @@ bool Material::parseTechnique(Properties* techniqueProperties)
         }
         else if (strcmp(name, "renderState") == 0)
         {
-            parseRenderState(&technique->getStateBlock(), space);
+            parseRenderState(technique, space);
         }
 
         space = techniqueProperties->getNextNamespace();
@@ -220,8 +186,6 @@ bool Material::parsePass(Technique* technique, Properties* passProperties)
     auto pass = Pass::create(technique);
     technique->addPass(pass);
 
-    pass->setName(passProperties->getId());
-
     // Pass can have 3 different namespaces:
     //  - one or more "sampler"
     //  - one "renderState"
@@ -232,13 +196,9 @@ bool Material::parsePass(Technique* technique, Properties* passProperties)
     {
         const char* name = space->getNamespace();
         if (strcmp(name, "shader") == 0)
-        {
             parseShader(pass, space);
-        }
         else if (strcmp(name, "renderState") == 0)
-        {
-            parseRenderState(&pass->_renderState.getStateBlock(), space);
-        }
+            parseRenderState(pass, space);
         else {
             CCASSERT(false, "Invalid namespace");
             return false;
@@ -251,7 +211,7 @@ bool Material::parsePass(Technique* technique, Properties* passProperties)
 }
 
 // cocos2d-x doesn't support Samplers yet. But will be added soon
-bool Material::parseSampler(backend::ProgramState* programState, Properties* samplerProperties)
+bool Material::parseSampler(GLProgramState* glProgramState, Properties* samplerProperties)
 {
     CCASSERT(samplerProperties->getId(), "Sampler must have an id. The id is the uniform name");
     
@@ -265,6 +225,7 @@ bool Material::parseSampler(backend::ProgramState* programState, Properties* sam
     }
 
     // optionals
+
     {
         Texture2D::TexParams texParams;
 
@@ -279,9 +240,9 @@ bool Material::parseSampler(backend::ProgramState* programState, Properties* sam
         // valid options: REPEAT, CLAMP
         const char* wrapS = getOptionalString(samplerProperties, "wrapS", "CLAMP_TO_EDGE");
         if (strcasecmp(wrapS, "REPEAT")==0)
-            texParams.sAddressMode = backend::SamplerAddressMode::REPEAT;
+            texParams.wrapS = GL_REPEAT;
         else if(strcasecmp(wrapS, "CLAMP_TO_EDGE")==0)
-            texParams.sAddressMode = backend::SamplerAddressMode::CLAMP_TO_EDGE;
+            texParams.wrapS = GL_CLAMP_TO_EDGE;
         else
             CCLOG("Invalid wrapS: %s", wrapS);
 
@@ -289,9 +250,9 @@ bool Material::parseSampler(backend::ProgramState* programState, Properties* sam
         // valid options: REPEAT, CLAMP
         const char* wrapT = getOptionalString(samplerProperties, "wrapT", "CLAMP_TO_EDGE");
         if (strcasecmp(wrapT, "REPEAT")==0)
-            texParams.tAddressMode = backend::SamplerAddressMode::REPEAT;
+            texParams.wrapT = GL_REPEAT;
         else if(strcasecmp(wrapT, "CLAMP_TO_EDGE")==0)
-            texParams.tAddressMode = backend::SamplerAddressMode::CLAMP_TO_EDGE;
+            texParams.wrapT = GL_CLAMP_TO_EDGE;
         else
             CCLOG("Invalid wrapT: %s", wrapT);
 
@@ -299,51 +260,33 @@ bool Material::parseSampler(backend::ProgramState* programState, Properties* sam
         // valid options: NEAREST, LINEAR, NEAREST_MIPMAP_NEAREST, LINEAR_MIPMAP_NEAREST, NEAREST_MIPMAP_LINEAR, LINEAR_MIPMAP_LINEAR
         const char* minFilter = getOptionalString(samplerProperties, "minFilter", usemipmap ? "LINEAR_MIPMAP_NEAREST" : "LINEAR");
         if (strcasecmp(minFilter, "NEAREST")==0)
-            texParams.minFilter = backend::SamplerFilter::NEAREST;
+            texParams.minFilter = GL_NEAREST;
         else if(strcasecmp(minFilter, "LINEAR")==0)
-            texParams.minFilter = backend::SamplerFilter::LINEAR;
+            texParams.minFilter = GL_LINEAR;
         else if(strcasecmp(minFilter, "NEAREST_MIPMAP_NEAREST")==0)
-            texParams.minFilter = backend::SamplerFilter::NEAREST;
+            texParams.minFilter = GL_NEAREST_MIPMAP_NEAREST;
         else if(strcasecmp(minFilter, "LINEAR_MIPMAP_NEAREST")==0)
-            texParams.minFilter = backend::SamplerFilter::LINEAR;
+            texParams.minFilter = GL_LINEAR_MIPMAP_NEAREST;
         else if(strcasecmp(minFilter, "NEAREST_MIPMAP_LINEAR")==0)
-            texParams.minFilter = backend::SamplerFilter::LINEAR;
+            texParams.minFilter = GL_NEAREST_MIPMAP_LINEAR;
         else if(strcasecmp(minFilter, "LINEAR_MIPMAP_LINEAR")==0)
-            texParams.minFilter = backend::SamplerFilter::LINEAR;
+            texParams.minFilter = GL_LINEAR_MIPMAP_LINEAR;
         else
             CCLOG("Invalid minFilter: %s", minFilter);
 
         // valid options: NEAREST, LINEAR
         const char* magFilter = getOptionalString(samplerProperties, "magFilter", "LINEAR");
         if (strcasecmp(magFilter, "NEAREST")==0)
-            texParams.magFilter = backend::SamplerFilter::NEAREST;
+            texParams.magFilter = GL_NEAREST;
         else if(strcasecmp(magFilter, "LINEAR")==0)
-            texParams.magFilter = backend::SamplerFilter::LINEAR;
+            texParams.magFilter = GL_LINEAR;
         else
             CCLOG("Invalid magFilter: %s", magFilter);
 
         texture->setTexParameters(texParams);
     }
 
-    auto textureName = samplerProperties->getId();
-    auto location = programState->getUniformLocation(textureName);
-    
-    if (!location)
-    {
-        CCLOG("warning: failed to find texture uniform location %s when parsing material", textureName);
-        return false;
-    }
-
-    if (_textureSlots.find(textureName) == _textureSlots.end())
-    {
-        _textureSlots[textureName] = _textureSlotIndex;
-        programState->setTexture(location, _textureSlotIndex++, texture->getBackendTexture());
-    }
-    else
-    {
-        programState->setTexture(location, _textureSlots[textureName], texture->getBackendTexture());
-    }
-
+    glProgramState->setUniformTexture(samplerProperties->getId(), texture);
     return true;
 }
 
@@ -358,22 +301,10 @@ bool Material::parseShader(Pass* pass, Properties* shaderProperties)
     // compileTimeDefines
     const char* compileTimeDefines = getOptionalString(shaderProperties, "defines", "");
 
-    auto *fu = FileUtils::getInstance();
-
     if (vertShader && fragShader)
     {
-
-        auto vertShaderSrc = fu->getStringFromFile(vertShader);
-        auto fragShaderSrc = fu->getStringFromFile(fragShader);
-
-        auto defs = replaceDefines(compileTimeDefines);
-
-        vertShaderSrc = defs + "\n" + vertShaderSrc;
-        fragShaderSrc = defs + "\n" + fragShaderSrc;
-
-        auto* program = backend::Device::getInstance()->newProgram(vertShaderSrc, fragShaderSrc);
-        auto programState = new backend::ProgramState(program);
-        pass->setProgramState(programState);
+        auto glProgramState = GLProgramState::getOrCreateWithShaders(vertShader, fragShader, compileTimeDefines);
+        pass->setGLProgramState(glProgramState);
 
         // Parse uniforms only if the GLProgramState was created
         auto property = shaderProperties->getNextProperty();
@@ -381,7 +312,7 @@ bool Material::parseShader(Pass* pass, Properties* shaderProperties)
         {
             if (isValidUniform(property))
             {
-                parseUniform(programState, shaderProperties, property);
+                parseUniform(glProgramState, shaderProperties, property);
             }
 
             property = shaderProperties->getNextProperty();
@@ -393,31 +324,26 @@ bool Material::parseShader(Pass* pass, Properties* shaderProperties)
             const char* name = space->getNamespace();
             if (strcmp(name, "sampler") == 0)
             {
-                parseSampler(programState, space);
+                parseSampler(glProgramState, space);
             }
             space = shaderProperties->getNextNamespace();
         }
-        CC_SAFE_RELEASE(program);
-        CC_SAFE_RELEASE(programState);
     }
 
     return true;
 }
 
-bool Material::parseUniform(backend::ProgramState* programState, Properties* properties, const char* uniformName)
+bool Material::parseUniform(GLProgramState* programState, Properties* properties, const char* uniformName)
 {
     bool ret = true;
 
     auto type = properties->getType(uniformName);
 
-    backend::UniformLocation location;
-    location = programState->getUniformLocation(uniformName);
-
     switch (type) {
         case Properties::Type::NUMBER:
         {
             auto f = properties->getFloat(uniformName);
-            programState->setUniform(location, &f, sizeof(f));
+            programState->setUniformFloat(uniformName, f);
             break;
         }
 
@@ -425,7 +351,7 @@ bool Material::parseUniform(backend::ProgramState* programState, Properties* pro
         {
             Vec2 v2;
             properties->getVec2(uniformName, &v2);
-            programState->setUniform(location, &v2, sizeof(v2));
+            programState->setUniformVec2(uniformName, v2);
             break;
         }
 
@@ -433,7 +359,7 @@ bool Material::parseUniform(backend::ProgramState* programState, Properties* pro
         {
             Vec3 v3;
             properties->getVec3(uniformName, &v3);
-            programState->setUniform(location, &v3, sizeof(v3));
+            programState->setUniformVec3(uniformName, v3);
             break;
         }
 
@@ -441,7 +367,7 @@ bool Material::parseUniform(backend::ProgramState* programState, Properties* pro
         {
             Vec4 v4;
             properties->getVec4(uniformName, &v4);
-            programState->setUniform(location, &v4, sizeof(v4));
+            programState->setUniformVec4(uniformName, v4);
             break;
         }
 
@@ -449,7 +375,7 @@ bool Material::parseUniform(backend::ProgramState* programState, Properties* pro
         {
             Mat4 m4;
             properties->getMat4(uniformName, &m4);
-            programState->setUniform(location, &m4.m, sizeof(m4.m));
+            programState->setUniformMat4(uniformName, m4);
             break;
         }
 
@@ -465,12 +391,9 @@ bool Material::parseUniform(backend::ProgramState* programState, Properties* pro
 }
 
 
-bool Material::parseRenderState(RenderState::StateBlock *state, Properties* properties)
+bool Material::parseRenderState(RenderState* renderState, Properties* properties)
 {
-    if (nullptr == state)
-    {
-        return false;
-    }
+    auto state = renderState->getStateBlock();
 
     auto property = properties->getNextProperty();
     while (property)
@@ -511,21 +434,19 @@ Material* Material::clone() const
     auto material = new (std::nothrow) Material();
     if (material)
     {
-        //RenderState::cloneInto(material);
-        material->_renderState = _renderState;
+        RenderState::cloneInto(material);
 
         for (const auto& technique: _techniques)
         {
             auto t = technique->clone();
-            t->_material = material;
+            t->_parent = material;
             material->_techniques.pushBack(t);
         }
 
         // current technique
         auto name = _currentTechnique->getName();
         material->_currentTechnique = material->getTechniqueByName(name);
-        material->_textureSlots = material->_textureSlots;
-        material->_textureSlotIndex = material->_textureSlotIndex;
+
         material->autorelease();
     }
     return material;
@@ -544,7 +465,7 @@ const Vector<Technique*>& Material::getTechniques() const
 Technique* Material::getTechniqueByName(const std::string& name)
 {
     for(const auto& technique : _techniques) {
-        if (technique->getName().compare(name)==0)
+        if (technique->getName() == name)
             return technique;
     }
     return nullptr;

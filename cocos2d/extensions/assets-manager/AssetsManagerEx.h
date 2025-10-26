@@ -229,13 +229,13 @@ private:
     FileUtils *_fileUtils;
     
     //! State of update
-    State _updateState = State::UNCHECKED;
+    State _updateState;
     
     //! Downloader
     std::shared_ptr<network::Downloader> _downloader;
     
     //! The reference to the local assets
-    const std::unordered_map<std::string, Manifest::Asset> *_assets = nullptr;
+    const std::unordered_map<std::string, Manifest::Asset> *_assets;
     
     //! The path to store successfully downloaded version.
     std::string _storagePath;
@@ -256,13 +256,13 @@ private:
     std::string _manifestUrl;
     
     //! Local manifest
-    Manifest *_localManifest = nullptr;
+    Manifest *_localManifest;
     
     //! Local temporary manifest for download resuming
-    Manifest *_tempManifest = nullptr;
+    Manifest *_tempManifest;
     
     //! Remote manifest
-    Manifest *_remoteManifest = nullptr;
+    Manifest *_remoteManifest;
     
     //! Whether user have requested to update
     enum class UpdateEntry : char
@@ -272,7 +272,7 @@ private:
         DO_UPDATE
     };
 
-    UpdateEntry _updateEntry = UpdateEntry::NONE;
+    UpdateEntry _updateEntry;
     
     //! All assets unit to download
     DownloadUnits _downloadUnits;
@@ -284,16 +284,16 @@ private:
     std::vector<std::string> _queue;
     
     //! Max concurrent task count for downloading
-    int _maxConcurrentTask = 32;
+    int _maxConcurrentTask;
     
     //! Current concurrent task count
-    int _currConcurrentTask = 0;
+    int _currConcurrentTask;
     
     //! Download percent
-    float _percent = 0.f;
+    float _percent;
     
     //! Download percent by file
-    float _percentByFile = 0.f;
+    float _percentByFile;
     
     //! Indicate whether the total size should be enabled
     int _totalEnabled;
@@ -308,20 +308,20 @@ private:
     std::unordered_map<std::string, double> _downloadedSize;
     
     //! Total number of assets to download
-    int _totalToDownload = 0;
+    int _totalToDownload;
     //! Total number of assets still waiting to be downloaded
-    int _totalWaitToDownload = 0;
+    int _totalWaitToDownload;
     //! Next target percent for saving the manifest file
-    float _nextSavePoint = 0.f;
+    float _nextSavePoint;
     
     //! Handle function to compare versions between different manifests
-    std::function<int(const std::string& versionA, const std::string& versionB)> _versionCompareHandle = nullptr;
+    std::function<int(const std::string& versionA, const std::string& versionB)> _versionCompareHandle;
     
     //! Callback function to verify the downloaded assets
-    std::function<bool(const std::string& path, Manifest::Asset asset)> _verifyCallback = nullptr;
+    std::function<bool(const std::string& path, Manifest::Asset asset)> _verifyCallback;
     
     //! Marker for whether the assets manager is inited
-    bool _inited = false;
+    bool _inited;
 };
 
 NS_CC_EXT_END

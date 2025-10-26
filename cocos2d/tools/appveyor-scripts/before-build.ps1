@@ -20,6 +20,10 @@ function Generate-Binding-Codes
     Push-Location $env:APPVEYOR_BUILD_FOLDER\tools\tolua
     & $python $env:APPVEYOR_BUILD_FOLDER\tools\tolua\genbindings.py
     Pop-Location
+
+    Push-Location $env:APPVEYOR_BUILD_FOLDER\tools\tojs
+    & $python $env:APPVEYOR_BUILD_FOLDER\tools\tojs\genbindings.py
+    Pop-Location
 }
 
 function Update-SubModule
@@ -36,16 +40,15 @@ Download-Deps
 
 & python -m pip install retry
 
-If ($env:build_type -eq "windows32_cmake_test" ) {
+# don't need generate binding codes for cpp only target
+If ($env:build_type -ne "android_cpp_tests") {
     & $python -u .\tools\appveyor-scripts\setup_android.py --ndk_only
     Generate-Binding-Codes
 }
-elseif ($env:build_type -like "android*") {
+
+If ($env:build_type -like "android*") {
     & choco install ninja
     & ninja --version
     & $python -u .\tools\appveyor-scripts\setup_android.py
-    If ($env:build_type -eq "android_lua_tests") {
-        Generate-Binding-Codes
-    }
     if ($lastexitcode -ne 0) {throw}
 }

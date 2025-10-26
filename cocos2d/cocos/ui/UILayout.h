@@ -30,7 +30,6 @@ THE SOFTWARE.
 #include "ui/GUIExport.h"
 #include "renderer/CCCustomCommand.h"
 #include "renderer/CCGroupCommand.h"
-#include "renderer/CCCallbackCommand.h"
 
 /**
  * @addtogroup ui
@@ -94,6 +93,12 @@ public:
      */
     virtual void doLayout() = 0;
 };
+
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WINRT)
+#ifdef RELATIVE
+#undef RELATIVE
+#endif
+#endif
 
 /**
  *@brief A container for holding a few child widgets. 
@@ -250,13 +255,13 @@ public:
      *
      * @param opacity The opacity in `GLubyte`.
      */
-    void setBackGroundColorOpacity(uint8_t opacity);
+    void setBackGroundColorOpacity(GLubyte opacity);
     
     /**
      * Get the layout's background color opacity.
      *@return Background color opacity value.
      */
-    uint8_t getBackGroundColorOpacity()const;
+    GLubyte getBackGroundColorOpacity()const;
     
     /**
      * Sets background color vector for layout.
@@ -282,7 +287,7 @@ public:
      * Set opacity of background image.
      *@param opacity Background image opacity in GLubyte.
      */
-    void setBackGroundImageOpacity(uint8_t opacity);
+    void setBackGroundImageOpacity(GLubyte opacity);
     
     /**
      * Get color of layout's background image.
@@ -294,7 +299,7 @@ public:
      * Get the opacity of layout's background image.
      * @return The opacity of layout's background image.
      */
-    uint8_t getBackGroundImageOpacity()const;
+    GLubyte getBackGroundImageOpacity()const;
     
     /**
      * Remove the background image of layout.
@@ -608,7 +613,7 @@ protected:
     TextureResType _bgImageTexType;
     Size _backGroundImageTextureSize;
     Color3B _backGroundImageColor;
-    uint8_t _backGroundImageOpacity;
+    GLubyte _backGroundImageOpacity;
 
     LayerColor* _colorRender;
     LayerGradient* _gradientRender;
@@ -616,7 +621,7 @@ protected:
     Color3B _gStartColor;
     Color3B _gEndColor;
     Vec2 _alongVector;
-    uint8_t _cOpacity;
+    GLubyte _cOpacity;
     
     //clipping
     bool _clippingEnabled;
@@ -633,11 +638,11 @@ protected:
     StencilStateManager *_stencilStateManager;
 
     GroupCommand _groupCommand;
-    CallbackCommand _beforeVisitCmdStencil;
-    CallbackCommand _afterDrawStencilCmd;
-    CallbackCommand _afterVisitCmdStencil;
-    CallbackCommand _beforeVisitCmdScissor;
-    CallbackCommand _afterVisitCmdScissor;
+    CustomCommand _beforeVisitCmdStencil;
+    CustomCommand _afterDrawStencilCmd;
+    CustomCommand _afterVisitCmdStencil;
+    CustomCommand _beforeVisitCmdScissor;
+    CustomCommand _afterVisitCmdScissor;
     
     bool _doLayoutDirty;
     bool _isInterceptTouch;

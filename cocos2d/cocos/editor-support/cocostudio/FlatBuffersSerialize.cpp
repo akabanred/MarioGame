@@ -26,7 +26,6 @@
 #include "editor-support/cocostudio/FlatBuffersSerialize.h"
 
 #include "base/ObjectFactory.h"
-#include "base/ccConstants.h"
 #include "ui/CocosGUI.h"
 #include "platform/CCFileUtils.h"
 #include "editor-support/cocostudio/CocoStudio.h"
@@ -326,7 +325,7 @@ std::string FlatBuffersSerialize::serializeFlatBuffersWithXMLFile(const std::str
 
 // NodeTree
 Offset<NodeTree> FlatBuffersSerialize::createNodeTree(const tinyxml2::XMLElement *objectData,
-                                                      std::string classType)
+                                                      const std::string& classType)
 {
     std::string classname = classType.substr(0, classType.find("ObjectData"));
 //    CCLOG("classname = %s", classname.c_str());
@@ -435,7 +434,7 @@ Offset<NodeTree> FlatBuffersSerialize::createNodeTree(const tinyxml2::XMLElement
     
 }
 
-int FlatBuffersSerialize::getResourceType(std::string key)
+int FlatBuffersSerialize::getResourceType(const std::string& key)
 {
     if(key == "Normal" || key == "Default")
     {
@@ -578,7 +577,7 @@ Offset<NodeAction> FlatBuffersSerialize::createNodeAction(const tinyxml2::XMLEle
         }
         else if (name == "ActivedAnimationName")
         {
-            currentAnimationName = value.c_str();
+            currentAnimationName = value;
         }
         
         attribute = attribute->Next();
@@ -1176,7 +1175,7 @@ flatbuffers::Offset<flatbuffers::BlendFrame> FlatBuffersSerialize::createBlendFr
 {
     int frameIndex = 0;
     bool tween = true;
-    int32_t src = GLBlendConst::ONE, dst = GLBlendConst::ONE_MINUS_SRC_ALPHA;
+    int32_t src = GL_ONE, dst = GL_ONE_MINUS_SRC_ALPHA;
     std::string name = "";
     std::string value = "";
 
@@ -1411,7 +1410,7 @@ FlatBufferBuilder* FlatBuffersSerialize::createFlatBuffersWithXMLFileForSimulato
 }
 
 Offset<NodeTree> FlatBuffersSerialize::createNodeTreeForSimulator(const tinyxml2::XMLElement *objectData,
-                                                                  std::string classType)
+                                                                  const std::string& classType)
 {
     std::string classname = classType.substr(0, classType.find("ObjectData"));
 //    CCLOG("classname = %s", classname.c_str());

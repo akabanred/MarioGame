@@ -23,6 +23,10 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
+
+#include "platform/CCPlatformConfig.h"
+#if CC_TARGET_PLATFORM == CC_PLATFORM_IOS
+
 #import <UIKit/UIKit.h>
 
 #include "platform/ios/CCEAGLView-ios.h"
@@ -276,3 +280,5 @@ Rect GLViewImpl::getSafeAreaRect() const
 }
 
 NS_CC_END
+
+#endif // CC_PLATFORM_IOS

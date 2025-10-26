@@ -21,6 +21,8 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
+
+
 #include "2d/CCClippingRectangleNode.h"
 #include "base/CCDirector.h"
 #include "renderer/CCRenderer.h"
@@ -32,24 +34,25 @@ NS_CC_BEGIN
 ClippingRectangleNode* ClippingRectangleNode::create(const Rect& clippingRegion)
 {
     ClippingRectangleNode* node = new (std::nothrow) ClippingRectangleNode();
-    if (node && node->init())
-    {
+    if (node && node->init()) {
         node->setClippingRegion(clippingRegion);
         node->autorelease();
-    } else
+    } else {
         CC_SAFE_DELETE(node);
-
+    }
+    
     return node;
 }
 
 ClippingRectangleNode* ClippingRectangleNode::create()
 {
     ClippingRectangleNode* node = new (std::nothrow) ClippingRectangleNode();
-    if (node && node->init())
+    if (node && node->init()) {
         node->autorelease();
-    else
+    } else {
         CC_SAFE_DELETE(node);
-
+    }
+    
     return node;
 }
 
@@ -60,11 +63,8 @@ void ClippingRectangleNode::setClippingRegion(const Rect &clippingRegion)
 
 void ClippingRectangleNode::onBeforeVisitScissor()
 {
-    if (_clippingEnabled)
-    {
-        auto renderer = Director::getInstance()->getRenderer();
-        _oldScissorTest = renderer->getScissorTest();
-        renderer->setScissorTest(true);
+    if (_clippingEnabled) {
+        glEnable(GL_SCISSOR_TEST);
 
         float scaleX = _scaleX;
         float scaleY = _scaleY;
@@ -87,7 +87,9 @@ void ClippingRectangleNode::onBeforeVisitScissor()
 void ClippingRectangleNode::onAfterVisitScissor()
 {
     if (_clippingEnabled)
-        Director::getInstance()->getRenderer()->setScissorTest(_oldScissorTest);
+    {
+        glDisable(GL_SCISSOR_TEST);
+    }
 }
 
 void ClippingRectangleNode::visit(Renderer *renderer, const Mat4 &parentTransform, uint32_t parentFlags)

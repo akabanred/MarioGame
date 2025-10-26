@@ -27,7 +27,7 @@ THE SOFTWARE.
 
 #include <functional>
 
-namespace cocos2d {
+namespace cocos2d { namespace experimental {
 
 class IAudioPlayer
 {
@@ -86,4 +86,4 @@ public:
     virtual void setPlayEventCallback(const PlayEventCallback &playEventCallback) = 0;
 };
 
-} // namespace cocos2d {
+}} // namespace cocos2d { namespace experimental {

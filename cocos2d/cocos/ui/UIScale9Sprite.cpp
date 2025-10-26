@@ -29,6 +29,7 @@
 #include "base/CCVector.h"
 #include "base/CCDirector.h"
 #include "base/ccUTF8.h"
+#include "renderer/CCGLProgram.h"
 #include "renderer/ccShaders.h"
 #include "platform/CCImage.h"
 #include "base/CCNinePatchImageParser.h"
@@ -235,6 +236,12 @@ bool Scale9Sprite::init(Sprite* sprite, const Rect& origRect, bool rotated, cons
     return ret;
 }
 
+bool Scale9Sprite::initWithBatchNode(SpriteBatchNode *batchnode, const Rect &rect, bool rotated, const Rect &capInsets)
+{
+    auto sprite = Sprite::createWithTexture(batchnode->getTexture());
+    return init(sprite, rect, rotated, capInsets);
+}
+
 bool Scale9Sprite::initWithFile(const std::string& filename, const Rect& rect, const Rect& capInsets)
 {
     // calls super
@@ -250,6 +257,23 @@ bool Scale9Sprite::initWithFile(const std::string& filename, const Rect& rect, c
 
     setupSlice9(getTexture(), capInsets);
     return ret;
+}
+
+bool Scale9Sprite::initWithBatchNode(SpriteBatchNode *batchnode, const Rect &rect, const Rect &capInsets)
+{
+    auto sprite = Sprite::createWithTexture(batchnode->getTexture());
+    return init(sprite, rect, false, capInsets);
+}
+
+bool Scale9Sprite::updateWithBatchNode(SpriteBatchNode *batchnode, const Rect &originalRect, bool rotated, const Rect &capInsets)
+{
+    Sprite *sprite = Sprite::createWithTexture(batchnode->getTexture());
+    return updateWithSprite(sprite,
+                            originalRect,
+                            rotated,
+                            Vec2::ZERO,
+                            originalRect.size,
+                            capInsets);
 }
 
 bool Scale9Sprite::updateWithSprite(Sprite* sprite,
@@ -304,18 +328,20 @@ void Scale9Sprite::setState(Scale9Sprite::State state)
 {
     if (_brightState != state) {
         _brightState = state;
-        auto isETC1 = getTexture() && getTexture()->getAlphaTextureName();
+
+        GLProgramState *glState = nullptr;
         switch (state)
         {
             case State::NORMAL:
-                Sprite::updateShaders(positionTextureColor_vert, (isETC1)?etc1_frag:positionTextureColor_frag);
+                glState = GLProgramState::getOrCreateWithGLProgramName(GLProgram::SHADER_NAME_POSITION_TEXTURE_COLOR_NO_MVP, getTexture());
                 break;
             case State::GRAY:
-                Sprite::updateShaders(positionTextureColor_vert, (isETC1)?etc1Gray_frag:grayScale_frag);
+                glState = GLProgramState::getOrCreateWithGLProgramName(GLProgram::SHADER_NAME_POSITION_GRAYSCALE, getTexture());
             default:
                 break;
         }
 
+        setGLProgramState(glState);
         _brightState = state;
     }
 }
