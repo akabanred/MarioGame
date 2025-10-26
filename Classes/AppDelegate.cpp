@@ -2,6 +2,9 @@
 #include "SceneLoadResource.h"
 #include "Common.h"
 
+#ifdef _WIN32
+#include <Windows.h>  
+#endif
 
 // #define USE_AUDIO_ENGINE 1
 // #define USE_SIMPLE_AUDIO_ENGINE 1
@@ -56,53 +59,85 @@ static int register_all_packages()
 }
 
 bool AppDelegate::applicationDidFinishLaunching() {
-    // initialize director
+    CCLOG("==> applicationDidFinishLaunching: START");
+
     auto director = Director::getInstance();
-    auto glview = director->getOpenGLView();
-    if(!glview) {
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) || (CC_TARGET_PLATFORM == CC_PLATFORM_MAC) || (CC_TARGET_PLATFORM == CC_PLATFORM_LINUX)
-        glview = GLViewImpl::createWithRect("Mario", cocos2d::Rect(0, 0, designResolutionSize.width, designResolutionSize.height));
-#else
-        glview = GLViewImpl::create("Mario");
+    auto glview   = director->getOpenGLView();
+
+#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
+// Nếu muốn nhìn log cả khi chạy ngoài Visual Studio, mở console:
+    //AllocConsole();
+    //freopen("CONOUT$", "w", stdout);
+    //freopen("CONOUT$", "w", stderr);
 #endif
+
+    if (!glview) {
+    #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) || \
+        (CC_TARGET_PLATFORM == CC_PLATFORM_MAC)   || \
+        (CC_TARGET_PLATFORM == CC_PLATFORM_LINUX)
+        CCLOG("Create GLView with rect %dx%d", (int)designResolutionSize.width, (int)designResolutionSize.height);
+        glview = GLViewImpl::createWithRect("Mario",
+                    cocos2d::Rect(0, 0, designResolutionSize.width, designResolutionSize.height));
+    #else
+        CCLOG("Create GLView default");
+        glview = GLViewImpl::create("Mario");
+    #endif
         director->setOpenGLView(glview);
+    } else {
+        CCLOG("GLView already exists");
     }
 
-    // turn on display FPS
-   // director->setDisplayStats(true);
-
-    // set FPS. the default value is 1.0/60 if you don't call this
+    //director->setDisplayStats(true);
     director->setAnimationInterval(1.0f / 60);
 
-    // Set the design resolution
-    glview->setDesignResolutionSize(designResolutionSize.width, designResolutionSize.height, ResolutionPolicy::NO_BORDER);
-    auto frameSize = glview->getFrameSize();
-    // if the frame's height is larger than the height of medium size.
-    if (frameSize.height > mediumResolutionSize.height)
-    {        
-        director->setContentScaleFactor(MIN(largeResolutionSize.height/designResolutionSize.height, largeResolutionSize.width/designResolutionSize.width));
-    }
-    // if the frame's height is larger than the height of small size.
-    else if (frameSize.height > smallResolutionSize.height)
-    {        
-        director->setContentScaleFactor(MIN(mediumResolutionSize.height/designResolutionSize.height, mediumResolutionSize.width/designResolutionSize.width));
-    }
-    // if the frame's height is smaller than the height of medium size.
-    else
-    {        
-        director->setContentScaleFactor(MIN(smallResolutionSize.height/designResolutionSize.height, smallResolutionSize.width/designResolutionSize.width));
+    glview->setDesignResolutionSize(
+        designResolutionSize.width, designResolutionSize.height, ResolutionPolicy::NO_BORDER);
+
+    const auto frameSize = glview->getFrameSize();
+    CCLOG("frameSize: %.0fx%.0f", frameSize.width, frameSize.height);
+
+    if (frameSize.height > mediumResolutionSize.height) {
+        float sf = MIN(largeResolutionSize.height/designResolutionSize.height,
+                       largeResolutionSize.width/designResolutionSize.width);
+        CCLOG("use LARGE scale factor = %.3f", sf);
+        director->setContentScaleFactor(sf);
+    } else if (frameSize.height > smallResolutionSize.height) {
+        float sf = MIN(mediumResolutionSize.height/designResolutionSize.height,
+                       mediumResolutionSize.width/designResolutionSize.width);
+        CCLOG("use MEDIUM scale factor = %.3f", sf);
+        director->setContentScaleFactor(sf);
+    } else {
+        float sf = MIN(smallResolutionSize.height/designResolutionSize.height,
+                       smallResolutionSize.width/designResolutionSize.width);
+        CCLOG("use SMALL scale factor = %.3f", sf);
+        director->setContentScaleFactor(sf);
     }
 
+    CCLOG("register_all_packages()");
     register_all_packages();
 
-    // create a scene. it's an autorelease object
-	auto scene = SceneLoadResource::create();
+    CCLOG("Create first scene: SceneLoadResource::create()");
+        auto scene = SceneLoadResource::create();
+        if (!scene) {
+            CCLOGERROR("SceneLoadResource::create() returned nullptr! App will exit.");
+        #ifdef _WIN32
+            MessageBoxA(nullptr,
+                        "SceneLoadResource::create() failed (nullptr).",
+                        "ERROR",
+                        MB_OK | MB_ICONERROR);
+        #endif
+            return false;   // nhớ return false để thoát đúng
+        }
 
-    // run
+
+
+    CCLOG("runWithScene()");
     director->runWithScene(scene);
 
-    return true;
+    CCLOG("==> applicationDidFinishLaunching: END (return true)");
+    return true; // nhớ return true, nếu false cũng sẽ thoát
 }
+
 
 // This function will be called when the app is inactive. Note, when receiving a phone call it is invoked.
 void AppDelegate::applicationDidEnterBackground() {

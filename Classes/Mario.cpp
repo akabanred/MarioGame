@@ -3,6 +3,8 @@
 #include "SceneGame.h"
 #include "ItemMushroom.h"
 #include <unordered_set>
+#include "ItemBullet.h"
+
 Mario* Mario::sm_mario = NULL;
 Mario* Mario::getInstance(){
 	if (sm_mario){
@@ -46,13 +48,13 @@ bool Mario::init(){
 void Mario::initResourceCache(){
 	{
 
-		//¼ÓÔØµ½»º´æÖÐ
+		//ï¿½ï¿½ï¿½Øµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		AnimationCache::getInstance()->addAnimation(myutil::createAnimation("smallWalkLeft.png",
 			0, 10, 14, 0.05f), "smallMoveLeftAnimation");
 		AnimationCache::getInstance()->addAnimation(myutil::createAnimation("smallWalkRight.png",
 			0, 10, 14, 0.05f), "smallMoveRightAnimation");
 
-		//ÂíÀï°ÂÌøµÄÊ±ºòÒªÓÃµÄÖ¡
+		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½Òªï¿½Ãµï¿½Ö¡
 		SpriteFrameCache::getInstance()
 			->addSpriteFrame(myutil::getSpriteFrame("smallWalkLeft.png", 10, 14),
 			"smallJumpLeft");
@@ -62,7 +64,7 @@ void Mario::initResourceCache(){
 	}
 	{
 
-		//¼ÓÔØµ½»º´æÖÐ
+		//ï¿½ï¿½ï¿½Øµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		AnimationCache::getInstance()
 			->addAnimation(myutil::createAnimation("walkRight.png",
 			0, 10, 18, 0.05f), "bigMoveRightAnimation");
@@ -72,7 +74,7 @@ void Mario::initResourceCache(){
 			0, 10, 18, 0.05f)
 			, "bigMoveLeftAnimation");
 
-		//ÂíÀï°ÂÌøµÄÊ±ºòÒªÓÃµÄÖ¡
+		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½Òªï¿½Ãµï¿½Ö¡
 
 
 		SpriteFrameCache::getInstance()
@@ -96,7 +98,7 @@ void Mario::initResourceCache(){
 	}
 }
 
-//¸üÐÂ×´Ì¬
+//ï¿½ï¿½ï¿½ï¿½×´Ì¬
 void Mario::updateStatus(){
 	if (_isDead){
 		return;
@@ -193,12 +195,12 @@ bool Mario::canMoveDown(float dt){
 	if (rcMario.getMinY() >= map->getContentSize().height){
 		return true;
 	}
-	//ÅÐ¶ÏÊÇ·ñ³ö½ç
+	//ï¿½Ð¶ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½
 	if (minY < 0){
 		
 		return true;
 	}
-	//ÏòÏÂ
+	//ï¿½ï¿½ï¿½ï¿½
 	pts[0] = Vec2(rcMario.getMinX(), minY);
 	pts[1] = Vec2(rcMario.getMidX(), minY);
 	pts[2] = Vec2(rcMario.getMaxX(), minY);
@@ -206,7 +208,7 @@ bool Mario::canMoveDown(float dt){
 	for (int i = 0; i < 3; ++i){
 		Vec2 ptTile = myutil::bLGLPointToTile(pts[i], map);
 
-		//Ç½,Ë®¹Ü,µØ°å
+		//Ç½,Ë®ï¿½ï¿½,ï¿½Ø°ï¿½
 		static const char *layerName[] = {
 			"block",
 			"pipe",
@@ -216,7 +218,7 @@ bool Mario::canMoveDown(float dt){
 			TMXLayer* layer = map->getLayer(layerName[j]);
 			int gid = layer->getTileGIDAt(ptTile);
 			if (gid){
-				//ÓÐ¶«Î÷µ²×¡ÁË
+				//ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½×¡ï¿½ï¿½
 				return false;
 			}
 		}
@@ -236,8 +238,8 @@ bool Mario::canMoveUp(float dt){
 	Vec2 ptMarioWorld = map->convertToWorldSpace(ptMario);
 	Vec2 pts[3];
 
-	//ÏòÉÏ
-	//ÅÐ¶ÏÊÇ·ñ³ö½ç
+	//ï¿½ï¿½ï¿½ï¿½
+	//ï¿½Ð¶ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½
 	float maxY = rcMario.getMaxY() + _speed.y*dt;
 	if (maxY > map->getContentSize().height)
 		return true;
@@ -249,7 +251,7 @@ bool Mario::canMoveUp(float dt){
 	for (int i = 0; i < 3; ++i){
 		Vec2 ptTile = myutil::bLGLPointToTile(pts[i],map);
 
-		//Ç½,Ë®¹Ü,µØ°å
+		//Ç½,Ë®ï¿½ï¿½,ï¿½Ø°ï¿½
 		static const char *layerName[] = {
 			"block",
 			"pipe",
@@ -259,7 +261,7 @@ bool Mario::canMoveUp(float dt){
 			TMXLayer* layer = map->getLayer(layerName[j]);
 			int gid = layer->getTileGIDAt(ptTile);
 			if (gid){
-				//ÓÐ¶«Î÷µ²×¡ÁË				
+				//ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½×¡ï¿½ï¿½				
 				return false;
 			}
 		}
@@ -285,7 +287,7 @@ bool Mario::canMoveHorizontally(float dt){
 	}
 	if (getPositionY() < 0)
 		return true;
-	//ÅÐ¶ÏÊÇ·ñ³ö½ç
+	//ï¿½Ð¶ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½
 	if (ptMarioWorld.x + _speed.x*dt <= 0){
 		return false;
 	}
@@ -294,7 +296,7 @@ bool Mario::canMoveHorizontally(float dt){
 	float maxY = rcMario.getMaxY() > map->getContentSize().height - 1 ? map->getContentSize().height - 1 : rcMario.getMaxY();
 	//CCLOG("midY=%g,maxY=%g", midY, maxY);
 	if (_speed.x < 0){
-		//Ïò×ó×ß
+		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		float minX = rcMario.getMinX() + _speed.x*dt;
 		pts[0] = Vec2(minX, midY);
 		pts[1] = Vec2(minX, maxY);
@@ -302,7 +304,7 @@ bool Mario::canMoveHorizontally(float dt){
 
 	}
 	else{
-		//ÏòÓÒ×ß
+		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		float maxX = rcMario.getMaxX() + _speed.x*dt;
 		pts[0] = Vec2(maxX, midY);
 		pts[1] = Vec2(maxX, maxY);
@@ -312,7 +314,7 @@ bool Mario::canMoveHorizontally(float dt){
 	for (int i = 0; i < 3; ++i){
 		Vec2 ptTile = myutil::bLGLPointToTile(pts[i], map);
 
-		//Ç½,Ë®¹Ü,µØ°å
+		//Ç½,Ë®ï¿½ï¿½,ï¿½Ø°ï¿½
 		static const char *layerName[] = {
 			"block",
 			"pipe",
@@ -322,7 +324,7 @@ bool Mario::canMoveHorizontally(float dt){
 			TMXLayer* layer = map->getLayer(layerName[j]);
 			int gid = layer->getTileGIDAt(ptTile);
 			if (gid){
-				//ÓÐ¶«Î÷µ²×¡ÁË
+				//ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½×¡ï¿½ï¿½
 				return false;
 			}
 		}
@@ -367,16 +369,16 @@ void Mario::jump(int initV){
 
 void Mario::moveVerticalCheck(float dt){
 	if (getPositionY() < -100){
-		//mario ËÀÍö
+		//mario ï¿½ï¿½ï¿½ï¿½
 		this->die(true);
 		return;
 	}
 
-	//ÅÐ¶ÏÊÇ·ñ¿ÉÒÔ×ÔÓÉÂäÌå
+	//ï¿½Ð¶ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	if (!_isFly){
 		_speed.y -= ARG_GRAVITY;
 		if (canMoveDown(dt)){
-			//Ã»ÓÐ¶«Î÷µ²×¡,×ÔÓÉÏÂÂä
+			//Ã»ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½×¡,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 			this->setPositionY(getPositionY() + dt*_speed.y);
 			_isFly = true;
 
@@ -394,7 +396,7 @@ void Mario::moveVerticalCheck(float dt){
 			_speed.y -= ARG_GRAVITY;
 		}
 		else{
-			//ËÙ¶È·´µ¯
+			//ï¿½Ù¶È·ï¿½ï¿½ï¿½
 			_speed.y = -_speed.y;
 		}
 	}
@@ -446,7 +448,7 @@ void Mario::die(bool realDead){
 		return;
 
 	if (realDead){
-		//ÕæÕýËÀÍöÁË
+		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		_isDead = true;
 		--_life;
 
@@ -454,13 +456,13 @@ void Mario::die(bool realDead){
 		
 		_speed.x = 0;
 
-		//½øÈëËÀÍö¶¯»­
+		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		Animate* animate = Animate::create(AnimationCache::getInstance()
 										   ->getAnimation("smallDieAnimation"));
 		MoveBy* moveBy = MoveBy::create(1,
 										Vec2(0, -winSize.height));
 		CallFunc* callfunc = CallFunc::create([&](){
-			//ËÀÍö¶¯»­½áÊøÁË
+			//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 			SceneGame* game = dynamic_cast<SceneGame*> (getMap()->getParent());
 			if (game){
@@ -486,7 +488,7 @@ void Mario::die(bool realDead){
 
 	}
 	else{
-		//Åöµ½¹ÖÏÈ±äÐ¡
+		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È±ï¿½Ð¡
 
 		if (_state!=State::Small){
 			_state = State::Small;
@@ -539,13 +541,13 @@ void Mario::autoRun(){
 	_speed.y = 0;
 
 
-	//×Ô¶¯ÏòÇ°×ß
+	//ï¿½Ô¶ï¿½ï¿½ï¿½Ç°ï¿½ï¿½
 	scheduleOnce(CC_SCHEDULE_SELECTOR(Mario::beginAutoMoveRightCallback), 1.5f);
 
 }
 
 void Mario::beginAutoMoveRightCallback(float dt){
-	//×Ô¶¯ÏòÇ°×ß
+	//ï¿½Ô¶ï¿½ï¿½ï¿½Ç°ï¿½ï¿½
 	schedule(CC_SCHEDULE_SELECTOR(Mario::autoMoveRightCallback));
 
 }
@@ -587,4 +589,25 @@ void  Mario::setIsFly(bool isFly){
 void Mario::endAutoRun() {
 
 	_isAutoRunning = false;
+}
+void Mario::fireArrow() {
+    if (_isDead || _isAutoRunning) return;
+    Node* parent = getMap();
+    if (!parent) return;
+
+    const uint32_t CAT_MARIO = 0x1u << 1;
+    int active = 0;
+    for (auto n : parent->getChildren())
+        if (auto b = dynamic_cast<ItemBullet*>(n))
+            if (b->getOwnerCategory() == CAT_MARIO) active++;
+    if (active >= 2) return;
+
+    Vec2 dir = (_faceDir == common::LEFT) ? Vec2(-1,0) : Vec2(1,0);
+    Vec2 muzzle = getPosition() + Vec2((_faceDir==common::LEFT?-12.f:12.f), 8.f);
+
+    auto bullet = ItemBullet::create();
+    bullet->setPosition(muzzle);
+    bullet->setOwnerCategory(CAT_MARIO);   // sáº½ tá»± dÃ¹ng arrowBullet.png
+    bullet->setVelocity(dir * 280.f);
+    parent->addChild(bullet, this->getLocalZOrder() - 1);
 }

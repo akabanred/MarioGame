@@ -1,94 +1,213 @@
 #include "ItemBoss.h"
 #include "ItemBullet.h"
+#include "Mario.h"
+#include "Common.h"
 
+USING_NS_CC;
+
+/* ---------- Factory ---------- */
 ItemBoss* ItemBoss::create(ValueMap& map)
 {
-	ItemBoss * pRet = new ItemBoss();
-	if (pRet&&pRet->init(map)){
-		pRet->autorelease();
-	}
-	else{
-		delete pRet;
-		pRet = NULL;
-	}
-	return pRet;
-
+    auto p = new (std::nothrow) ItemBoss();
+    if (p && p->initFromMap(map)) { p->autorelease(); return p; }
+    CC_SAFE_DELETE(p); return nullptr;
 }
 
-
-bool ItemBoss::init(ValueMap& map)
+ItemBoss* ItemBoss::createBoss(const Vec2& spawnPos)
 {
-	ItemCanMove::init();
-	_type = Item::IT_boss;
-	setPositionByProperty(map);
-	
-	m_left=	getPositionX()-4*16;
-	m_right=getPositionX()+4*16;
-	m_status = NORMAL;
-	_speedX = 40;
-	_speedY = 0;
-
-	
-
-	updateStatus();
-	scheduleOnce(CC_SCHEDULE_SELECTOR(ItemBoss::jumpCallback), 3.0f);
-	return true;
+    auto p = new (std::nothrow) ItemBoss();
+    if (p && p->initBoss(spawnPos)) { p->autorelease(); return p; }
+    CC_SAFE_DELETE(p); return nullptr;
 }
 
-void ItemBoss::moveCheck(float dt){
-	if (m_status == NORMAL){
-		setPositionX(getPositionX()+dt*_speedX);
-		if (getPositionX() > m_right||getPositionX()<m_left){
-			_speedX = -_speedX;
-			updateStatus();
-		}
-		if (canMoveDown(dt)){
-			moveDown(dt);
-			_speedY -= ARG_GRAVITY;
-		}
-		else{
-			_speedY = 0;
-		}
+/* ---------- Init ---------- */
+static bool initBossSpriteFromSheet(Sprite* spr)
+{
+    // N·∫°p texture c·ªßa sprite-sheet
+    auto tex = Director::getInstance()->getTextureCache()->addImage("boss.png");
+    if (!tex) return false;
 
-		//µ±«≈∂œµÙ∫Û,«–ªªŒ™DROPPING◊¥Ã¨
-	}
-	else if (m_status == DROPPING){
-		moveDown(dt);
-		_speedY -= ARG_GRAVITY;
-	}
+    // S·ªë khung trong sheet (ƒë·∫øm ƒë√∫ng theo ·∫£nh c·ªßa b·∫°n)
+    const int COLS = 8;   // 8 con x·∫øp ngang -> 8 frame
+    const int ROWS = 1;
 
-	
-}
-void ItemBoss::update(float dt){
-	collisionCheck(dt);
-	moveCheck(dt);
-}
-void ItemBoss::collisionCheck(float dt){
+    const float fw = tex->getContentSize().width  / COLS;
+    const float fh = tex->getContentSize().height / ROWS;
 
-}
-void ItemBoss::updateStatus(){
-	stopAllActions();
-	runAnimation(_speedX > 0 ? "bossRight" : "bossLeft");
-	
+    // C·∫Øt frame ƒë·∫ßu ti√™n (c·ªôt 0, h√†ng 0)
+    return spr->initWithTexture(tex, Rect(0, 0, fw, fh));
 }
 
-void ItemBoss::jumpCallback(float dt){
+bool ItemBoss::initFromMap(const ValueMap& map)
+{
+    if (!Item::init()) return false;
+    if (!initBossSpriteFromSheet(this)) return false;
 
-	if (m_status != NORMAL)
-		return;
-	_speedY = 200;
-	//ÀÊª˙∂‡…Ÿ√Î∫Û‘Ÿ¥Œµ˜”√
-	int randS = ::rand() % 5 + 2;
+    float x = 0.f, y = 0.f;
+    auto itx = map.find("x");
+    auto ity = map.find("y");
+    if (itx != map.end()) x = itx->second.asFloat();
+    if (ity != map.end()) y = ity->second.asFloat();
 
-	if (randS == 4){
-		//∑¢…‰◊”µØ
-		ItemBullet* bullet;
-		getMap()->addChild(bullet=ItemBullet::create());
-		//…Ë÷√bulletŒª÷√
+    _spawnPos = Vec2(x, y);
+    setPosition(_spawnPos);
+    setIgnoreAnchorPointForPosition(true);
+    setLocalZOrder(common::ZO_MUSHROOM);
 
-		//»√◊”µØ∑…
+    if (_battleArea.size.equals(Size::ZERO))
+        _battleArea = Rect(_spawnPos.x - 320, _spawnPos.y - 160, 640, 320);
 
-	}
+    scheduleUpdate();
+    return true;
+}
 
-	scheduleOnce(CC_SCHEDULE_SELECTOR(ItemBoss::jumpCallback), randS);
+bool ItemBoss::initBoss(const Vec2& spawnPos)
+{
+    if (!Item::init()) return false;
+    if (!initBossSpriteFromSheet(this)) return false;
+
+    _spawnPos = spawnPos;
+    setPosition(_spawnPos);
+    setIgnoreAnchorPointForPosition(true);
+    setLocalZOrder(common::ZO_MUSHROOM);
+
+    if (_battleArea.size.equals(Size::ZERO))
+        _battleArea = Rect(_spawnPos.x - 320, _spawnPos.y - 160, 640, 320);
+
+    scheduleUpdate();
+    return true;
+}
+
+void ItemBoss::start() {
+    if (!isScheduled(CC_SCHEDULE_SELECTOR(ItemBoss::update)))
+        scheduleUpdate();
+}
+
+/* ---------- Update ---------- */
+void ItemBoss::update(float dt)
+{
+    Item::update(dt);
+
+    // Gi·∫£m th·ªùi gian invincibility frame (i-frame)
+    if (_hurtCooldown > 0.f)
+        _hurtCooldown -= dt;
+
+    // Ki·ªÉm tra n·∫øu boss ƒë√£ ch·∫øt
+    if (isDead())
+    {
+        stopAllActions();
+        runAction(Sequence::create(
+            FadeOut::create(0.35f),
+            RemoveSelf::create(),
+            nullptr
+        ));
+        unscheduleUpdate();
+        return;
+    }
+
+    // L·∫•y con tr·ªè t·ªõi Mario n·∫øu ch∆∞a c√≥
+    if (!_mario && getParent())
+        _mario = dynamic_cast<Mario*>(getParent()->getChildByName("Mario"));
+
+    // Gi·ªØ boss trong ph·∫°m vi battle area
+    auto p = getPosition();
+    p.x = clampf(p.x, _battleArea.getMinX(), _battleArea.getMaxX());
+    p.y = clampf(p.y, _battleArea.getMinY(), _battleArea.getMaxY());
+    setPosition(p);
+
+    // Logic t·∫•n c√¥ng ho·∫∑c tu·∫ßn tra
+    if (_mario && getPosition().distance(_mario->getPosition()) <= _aggroRange)
+        doAttack(dt);
+    else
+        doPatrol(dt);
+
+    // Ki·ªÉm tra va ch·∫°m gi·ªØa Mario v√† Boss
+    if (_mario)
+    {
+        const Rect rcM = _mario->getBoundingBox();
+        const Rect rcB = this->getBoundingBox();
+
+        if (rcM.intersectsRect(rcB))
+        {
+            const bool marioOnTop =
+                (_mario->getPositionY() > getPositionY() + rcB.size.height * 0.3f);
+
+            // Mario nh·∫£y tr√∫ng ƒë·∫ßu boss (v√† h·∫øt i-frame)
+            if (marioOnTop && _mario->getSpeedY() <= 0 && _hurtCooldown <= 0.f)
+            {
+                takeDamage(1);
+                _hurtCooldown = 0.35f;  // Kho√° tr·ª´ m√°u li√™n t·ª•c
+                _mario->setPositionY(getPositionY() + rcB.size.height);
+                _mario->jump();
+            }
+            else
+            {
+                // Mario b·ªã boss ch·∫°m v√†o
+                if (!_mario->isGodMode())
+                    _mario->die();
+            }
+        }
+    }
+}
+
+/* ---------- Behaviors ---------- */
+void ItemBoss::doPatrol(float dt)
+{
+    const float leftX  = _spawnPos.x - 120.f;
+    const float rightX = _spawnPos.x + 120.f;
+
+    auto pos = getPosition();
+    const float dir = _facingRight ? +1.f : -1.f;
+    pos.x += dir * _speed * dt;
+
+    if (pos.x < leftX)  { pos.x = leftX;  _facingRight = true;  setFlippedX(false); }
+    if (pos.x > rightX) { pos.x = rightX; _facingRight = false; setFlippedX(true);  }
+
+    setPosition(pos);
+    playMoveAnim();
+}
+
+void ItemBoss::doAttack(float dt)
+{
+    _attackCooldown -= dt;
+    if (_attackCooldown <= 0.f)
+    {
+        shootOnce();
+        _attackCooldown = _attackInterval;
+    }
+    doPatrol(dt * 0.2f);
+}
+
+void ItemBoss::shootOnce()
+{
+    auto parent = getParent();
+    if (!parent) return;
+
+    const Vec2 muzzle = getPosition() + Vec2(0, getContentSize().height * 0.25f);
+    Vec2 dir = _facingRight ? Vec2(1, 0) : Vec2(-1, 0);
+    if (_mario) dir = (_mario->getPosition() - muzzle).getNormalized();
+
+    auto bullet = ItemBullet::create();
+    bullet->setPosition(muzzle);
+    bullet->setVelocity(dir * 220.f);
+    bullet->setOwnerCategory(0x1u << 4); // CAT_BOSS
+    parent->addChild(bullet, this->getLocalZOrder());
+}
+
+void ItemBoss::playMoveAnim()
+{
+    // n·∫øu c√≥ AnimationCache "bossLeft"/"bossRight" th√¨ k√≠ch ho·∫°t ·ªü ƒë√¢y
+}
+
+void ItemBoss::takeDamage(int dmg)
+{
+    if (isDead()) return;
+    _hp -= dmg;
+    if (_hp < 0) _hp = 0;
+
+    runAction(Sequence::create(
+        TintTo::create(0, 255, 80, 80),
+        DelayTime::create(0.06f),
+        TintTo::create(0, 255, 255, 255),
+        nullptr));
 }
