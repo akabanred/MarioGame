@@ -1,5 +1,5 @@
 #include "SceneGame.h"
-#include "SimpleAudioEngine.h"
+#include "audio/include/AudioEngine.h"
 #include "MenuCtrl.h"
 #include "SceneStart.h"
 #include "Mario.h"
@@ -7,13 +7,16 @@
 #include "ItemMushroom.h"
 #include "ItemBoss.h"
 #include "SceneLoadResource.h"
-//USING_NS_CC;
-SceneGame* SceneGame::create(int level) {
-	SceneGame* pRet = new SceneGame();
-	if (pRet && pRet->init(level)) {
+
+SceneGame *SceneGame::create(int level)
+{
+	SceneGame *pRet = new SceneGame();
+	if (pRet && pRet->init(level))
+	{
 		pRet->autorelease();
 	}
-	else {
+	else
+	{
 		delete pRet;
 		pRet = nullptr;
 	}
@@ -22,20 +25,19 @@ SceneGame* SceneGame::create(int level) {
 }
 bool SceneGame::init(int level)
 {
-	// PHẢI dùng initWithPhysics
-	if (!Scene::initWithPhysics()) return false;
+	if (!Scene::initWithPhysics())
+		return false;
 
 	auto world = this->getPhysicsWorld();
 	CCLOG("SceneGame PhysicsWorld = %p", world);
-	world->setGravity(Vec2(0, 0));                // hoặc (0,-980) tuỳ bạn
-	// world->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_ALL);
+	world->setGravity(Vec2(0, 0));
 
 	_menuDir = common::NONE;
 	_level = level;
 	_finalPoint = nullptr;
 	_bossSpawned = false;
-	_isAutoRunning = false;
-	_hasTouchedPole = false;
+	_firstUpdate = true;
+
 	addMap();
 	addCtrlButton();
 	addAnimationToCache();
@@ -43,167 +45,90 @@ bool SceneGame::init(int level)
 	return true;
 }
 
-
-
-
-
-void SceneGame::addMap() {
+void SceneGame::addMap()
+{
 	char mapName[32];
 	myutil::format(mapName, "MarioMap", _level, ".tmx");
 	CCLOG("Loading TMX: %s", mapName);
 	_map = TMXTiledMap::create(mapName);
-	if (!_map) {
+	if (!_map)
+	{
 		CCLOG("ERROR: Cannot load TMX %s. Check Resources path.", mapName);
-		return; // để thấy fallback ở AppDelegate
+		return;
 	}
 	addChild(_map);
 	_map->setPosition(_map->getPosition() + Vec2(0, winSize.height - _map->getContentSize().height));
-
 }
-void SceneGame::addCtrlButton() {
-	////���ӿ�����屳��
-	//Sprite* crtlBG = Sprite::createWithTexture(Director::getInstance()->getTextureCache()->addImage("controlUI.png"));
-	//crtlBG->setPosition(Vec2(0, 0));
-	//crtlBG->setAnchorPoint(Vec2(0, 0));
-	//addChild(crtlBG);
 
-	////�Զ���˵���ʵ�������������
-	//MenuCtrl* dirMenu = MenuCtrl::create();
-	//addChild(dirMenu);
-
-	//_textureDirNone = Director::getInstance()->getTextureCache()->addImage("backKeyImage.png");
-	//_textureDirLeft = Director::getInstance()->getTextureCache()->addImage("backKeyLeft.png");
-	//_textureDirRight = Director::getInstance()->getTextureCache()->addImage("backKeyRight.png");
-
-
-	////������Ƽ�Ч��
-	//_menuShow = Sprite::createWithTexture(_textureDirNone);
-	//Vec2 menuBGPoint(80, 50);
-	//_menuShow->setPosition(menuBGPoint);
-	//_menuShow->setScaleX(2.0);
-	//addChild(_menuShow);
-
-
-
-	//auto left1 = Sprite::create();
-	//auto left2 = Sprite::create();
-
-	//left1->setContentSize(Size(_textureDirNone->getContentSize().width / 2, _textureDirNone->getContentSize().height));
-	//left2->setContentSize(Size(_textureDirNone->getContentSize().width / 2, _textureDirNone->getContentSize().height));
-	//MenuItemSprite* menuItemLeft = MenuItemSprite::create(left1, left2, std::bind(&SceneGame::moveLeftCallback, this, std::placeholders::_1));
-
-
-
-
-	//auto right1 = Sprite::create();
-	//auto right2 = Sprite::create();
-	//right1->setContentSize(Size(_textureDirNone->getContentSize().width / 2, _textureDirNone->getContentSize().height));
-	//right2->setContentSize(Size(_textureDirNone->getContentSize().width / 2, _textureDirNone->getContentSize().height));
-	//MenuItemSprite* menuItemRight = MenuItemSprite::create(right1, right2, std::bind(&SceneGame::moveRightCallback, this, std::placeholders::_1));
-
-	//menuItemLeft->setScaleX(2.0f);
-	//menuItemRight->setScaleX(2.0f);
-
-	//Vec2  menuItemLeftPoint(menuBGPoint.x - winSize.width / 2 - menuItemRight->getBoundingBox().size.width / 2, menuBGPoint.y - winSize.height / 2);
-	//Vec2  menuItemRightPoint(menuBGPoint.x - winSize.width / 2 + menuItemRight->getBoundingBox().size.width / 2, menuBGPoint.y - winSize.height / 2);
-
-	//menuItemLeft->setPosition(menuItemLeftPoint);
-	//menuItemRight->setPosition(menuItemRightPoint);
-
-	////dirMenu->addChild(menuItemLeft);
-	////dirMenu->addChild(menuItemRight);
-
-
-	///*��Ծ��*/
-	//Menu* jumpMenu = Menu::create();
-	////addChild(jumpMenu);
-
-	//Texture2D* textureAB_normal = Director::getInstance()->getTextureCache()->addImage("AB_normal.png");
-	//Texture2D* textureAB_select = Director::getInstance()->getTextureCache()->addImage("AB_select.png");
-	//auto jumpNormal = Sprite::createWithTexture(textureAB_normal);
-
-
-	//auto jumpSelect = Sprite::createWithTexture(textureAB_select);
-
-	//MenuItemSprite* jumpItem = MenuItemSprite::create(jumpNormal,
-	//	jumpSelect,
-	//	std::bind(&SceneGame::jumpKeyCallback, this, std::placeholders::_1));
-
-	//jumpItem->setScale(2.0f);
-	//jumpItem->setPosition(Vec2(130, -110));
-	//jumpMenu->addChild(jumpItem);
-
-	// === Nút Setting ===
+void SceneGame::addCtrlButton()
+{
 	auto labelSetting = Label::createWithTTF("Setting", "fonts/Marker Felt.ttf", 26);
 	auto settingItem = MenuItemLabel::create(labelSetting, CC_CALLBACK_1(SceneGame::openSettingMenu, this));
-	settingItem->setPosition(Vec2(40, winSize.height - 20)); // góc trái trên
+	settingItem->setPosition(Vec2(40, winSize.height - 20));
 	labelSetting->setScale(0.8f);
 
 	auto menu = Menu::create(settingItem, nullptr);
 	menu->setPosition(Vec2::ZERO);
 	this->addChild(menu, 10);
-
 }
-void SceneGame::addMapObjectGroup() {
+
+void SceneGame::addMapObjectGroup()
+{
 	CCLOG("[SceneGame] addMapObjectGroup() begin");
 
-	// Guard cấp 0: nếu boss node đã tồn tại
-	if (_map->getChildByName("Boss_1") || _map->getChildByName("Boss_Before_Flag")) {
-		CCLOG("[SceneGame] Boss node already exists -> _bossSpawned=true (pre-guard)");
+	if (_map->getChildByName("Boss_1") || _map->getChildByName("Boss_Before_Flag"))
+	{
 		_bossSpawned = true;
 	}
 
-	TMXObjectGroup* objGroup = _map->getObjectGroup("objects");
-	if (!objGroup) {
+	TMXObjectGroup *objGroup = _map->getObjectGroup("objects");
+	if (!objGroup)
+	{
 		CCLOGERROR("[SceneGame] TMX object group 'objects' NOT FOUND!");
 		return;
 	}
 
-	ValueVector& values = objGroup->getObjects();
-	CCLOG("[SceneGame] objects count = %d", (int)values.size());
-
+	ValueVector &values = objGroup->getObjects();
 	bool foundBossInTMX = false;
 
-	for (auto& v : values) {
-		ValueMap& dict = v.asValueMap();
+	for (auto &v : values)
+	{
+		ValueMap &dict = v.asValueMap();
 
 		auto itType = dict.find("type");
-		if (itType == dict.end()) {
-			CCLOGERROR("[SceneGame] object missing 'type' -> skip");
+		if (itType == dict.end())
 			continue;
-		}
-		std::string type = itType->second.asString();
 
-		// Chuẩn hoá: dùng chữ thường để so dễ
+		std::string type = itType->second.asString();
 		std::string lowerType = type;
 		std::transform(lowerType.begin(), lowerType.end(), lowerType.begin(), ::tolower);
 
-		if (lowerType == "birthpoint") {
+		if (lowerType == "birthpoint")
+		{
 			int x = dict.count("x") ? dict.at("x").asInt() : 0;
 			int y = dict.count("y") ? dict.at("y").asInt() : 0;
 
 			_mario = Mario::getInstance();
 			_mario->setDead(false);
-			_mario->setPosition(Vec2(static_cast<float>(x), static_cast<float>(y) - _map->getTileSize().height)); // căn chân như cũ
-			_mario->setIgnoreAnchorPointForPosition(true);	
+			_mario->setPosition(Vec2(static_cast<float>(x), static_cast<float>(y) - _map->getTileSize().height));
+			_mario->setIgnoreAnchorPointForPosition(true);
 			_mario->setLocalZOrder(common::ZO_MARIO);
 			_mario->updateStatus();
-			if (_mario->getParent()) _mario->removeFromParentAndCleanup(true);
+			if (_mario->getParent())
+				_mario->removeFromParentAndCleanup(true);
 			_map->addChild(_mario);
 			_mario->setName("Mario");
-			CCLOG("[SceneGame] Mario spawned at (%.1f, %.1f)", _mario->getPositionX(), _mario->getPositionY());
 		}
-		else if (lowerType == "boss") {
-			// Guard cấp 1: nếu đã spawn rồi -> bỏ qua mọi boss khác trong TMX
-			if (_bossSpawned) {
-				CCLOG("[SceneGame] Skip extra TMX boss (already spawned)");
+		else if (lowerType == "boss")
+		{
+			if (_bossSpawned)
 				continue;
-			}
 
 			float bx = dict.at("x").asFloat();
-			float by = dict.at("y").asFloat(); // căn chân như Mario
+			float by = dict.at("y").asFloat();
 
-			if (auto boss = ItemBoss::createBoss({ bx, by })) {
+			if (auto boss = ItemBoss::createBoss({bx, by}))
+			{
 				boss->setName("Boss_1");
 				boss->setLocalZOrder(common::ZO_MARIO - 1);
 				boss->setBattleArea(Rect(bx - 200, by - 100, 400, 200));
@@ -211,572 +136,396 @@ void SceneGame::addMapObjectGroup() {
 				boss->start();
 				_bossSpawned = true;
 				foundBossInTMX = true;
-				CCLOG("[SceneGame] Boss spawned from TMX at (%.1f, %.1f)", bx, by);
-			}
-			else {
-				CCLOGERROR("[SceneGame] createBoss failed for TMX boss");
 			}
 		}
-		else {
-			// Các item thường
-			if (auto item = Item::create(dict)) {
-				switch (item->getType()) {
-				case Item::ItemType::IT_FLAGPOINT:  _itemFlagpoint = item; break;
-				case Item::ItemType::IT_FINALPOINT: _finalPoint = item; break;
+		else
+		{
+			if (auto item = Item::create(dict))
+			{
+				switch (item->getType())
+				{
+				case Item::ItemType::IT_FLAGPOINT:
+					_itemFlagpoint = item;
+					break;
+				case Item::ItemType::IT_FINALPOINT:
+					_finalPoint = item;
+					break;
 				case Item::ItemType::IT_MUSHROOADDLIFE:
 				case Item::ItemType::IT_MUSHROOMREWARD:
-					_mushrooms.push_back(item); break;
-				default: break;
+					_mushrooms.push_back(item);
+					break;
+				default:
+					break;
 				}
 				_map->addChild(item);
 			}
 		}
 	}
 
-	// Fallback: nếu TMX KHÔNG có boss, spawn 1 con trước cột cờ
-	if (!_bossSpawned && !foundBossInTMX && _finalPoint) {
+	if (!_bossSpawned && !foundBossInTMX && _finalPoint)
+	{
 		const float OFFSET_BEFORE_FLAG = 220.f;
 		float bx = _finalPoint->getPositionX() - OFFSET_BEFORE_FLAG;
 		float by = _finalPoint->getPositionY();
 
-		// Guard cấp 2: check lại theo tên node (phòng khi ở đâu đó đã add)
-		if (_map->getChildByName("Boss_1") || _map->getChildByName("Boss_Before_Flag")) {
-			CCLOG("[SceneGame] Skip fallback boss: boss node already exists");
-			_bossSpawned = true;
-		}
-		else {
-			CCLOG("[SceneGame] Try spawn BOSS before flag at (%.1f, %.1f)", bx, by);
-			if (auto boss = ItemBoss::createBoss({ bx, by })) {
+		if (!(_map->getChildByName("Boss_1") || _map->getChildByName("Boss_Before_Flag")))
+		{
+			if (auto boss = ItemBoss::createBoss({bx, by}))
+			{
 				boss->setName("Boss_Before_Flag");
 				boss->setLocalZOrder(common::ZO_MARIO - 1);
 				boss->setBattleArea(Rect(bx - 200, by - 100, 400, 200));
 				_map->addChild(boss);
 				boss->start();
 				_bossSpawned = true;
-				CCLOG("[SceneGame] Boss-before-flag spawned OK");
-			}
-			else {
-				CCLOGERROR("[SceneGame] Boss-before-flag createBoss FAILED");
 			}
 		}
 	}
-	else {
-		CCLOG("[SceneGame] No fallback spawn. _bossSpawned=%s, foundBossInTMX=%s, _finalPoint=%s",
-			_bossSpawned ? "true" : "false",
-			foundBossInTMX ? "true" : "false",
-			_finalPoint ? "valid" : "null");
-	}
-
 	CCLOG("[SceneGame] addMapObjectGroup() end");
 }
 
-
-
-
-
-
-
-void SceneGame::addAnimationToCache() {
-	//����Ģ������Դ
-	//���ض�����Դ
-	{
-		Animation* animation = myutil::createAnimation("Mushroom0.png", 0, 2,
-			16, 0.1f);
-		AnimationCache::getInstance()->addAnimation(animation, "mushroomMoving");
-
-		SpriteFrame* dead1 = myutil::getSpriteFrame("Mushroom0.png", 2, 16);
-		SpriteFrame* dead2 = myutil::getSpriteFrame("Mushroom0.png", 2, 16);
-
-		SpriteFrameCache::getInstance()->addSpriteFrame(dead1, "mushroomDead1");
-		SpriteFrameCache::getInstance()->addSpriteFrame(dead2, "mushroomDead2");
-	}
-	{
-		//�����ڹ�Ķ�����Դ
-		Animation* animation1 = myutil::createAnimation("tortoise0.png", 2, 2,
-			18, 0.4f);
-		AnimationCache::getInstance()->addAnimation(animation1, "tortoiseLeftMoving");
-
-		Animation* animation2 = myutil::createAnimation("tortoise0.png", 4, 2,
-			18, 0.4f);
-		AnimationCache::getInstance()->addAnimation(animation2, "tortoiseRightMoving");
-
-		Animation* animation3 = myutil::createAnimation("tortoise0.png", 8, 2,
-			18, 0.4f);
-		AnimationCache::getInstance()->addAnimation(animation3, "tortoiseDead");
-
-		SpriteFrame* dead1 = myutil::getSpriteFrame("tortoise0.png", 2, 16);
-		SpriteFrame* dead2 = myutil::getSpriteFrame("tortoise0.png", 2, 16);
-
-
-	}
-
-	{
-		//���ط����ڹ�Ķ�����Դ
-		Animation* animation1 = myutil::createAnimation("tortoise0.png", 0, 2,
-			18, 0.4f);
-		AnimationCache::getInstance()->addAnimation(animation1, "tortoiseFlyLeft");
-
-		Animation* animation2 = myutil::createAnimation("tortoise0.png", 6, 2,
-			18, 0.4f);
-		AnimationCache::getInstance()->addAnimation(animation2, "tortoiseFlyRight");
-
-
-
-	}
-	{
-		//���ػ���Դ
-		Animation* animation = myutil::createAnimation("flower0.png", 0, 2,
-			16, 0.5f);
-		AnimationCache::getInstance()->addAnimation(animation, "flowerShow");
-
-	}
-	{
-		SpriteFrame* frame = myutil::getSpriteFrame("rewardMushroomSet.png", 0, 16);
-		SpriteFrameCache::getInstance()->addSpriteFrame(frame, "rewardMushroom");
-	}
-	{
-
-		Animation* animation1 = myutil::createAnimation("flyFishLeft.png", 0, 6,
-			16, 0.4f);
-		AnimationCache::getInstance()->addAnimation(animation1, "flyFishLeft");
-
-		Animation* animation2 = myutil::createAnimation("flyFishRight.png", 0, 6,
-			16, 0.4f);
-		AnimationCache::getInstance()->addAnimation(animation2, "flyFishRight");
-
-
-	}
-	{
-		//boss
-		Animation* animation1 = myutil::createAnimation("boss.png", 0, 4,
-			32, 0.4f);
-		AnimationCache::getInstance()->addAnimation(animation1, "bossLeft");
-
-		Animation* animation2 = myutil::createAnimation("boss.png", 4, 4,
-			32, 0.4f);
-		AnimationCache::getInstance()->addAnimation(animation2, "bossRight");
-
-
-	}
+void SceneGame::addAnimationToCache()
+{
+	AnimationCache *cache = AnimationCache::getInstance();
+	cache->addAnimation(myutil::createAnimation("Mushroom0.png", 0, 2, 16, 0.1f), "mushroomMoving");
+	SpriteFrameCache::getInstance()->addSpriteFrame(myutil::getSpriteFrame("Mushroom0.png", 2, 16), "mushroomDead1");
+	cache->addAnimation(myutil::createAnimation("tortoise0.png", 2, 2, 18, 0.4f), "tortoiseLeftMoving");
+	cache->addAnimation(myutil::createAnimation("tortoise0.png", 4, 2, 18, 0.4f), "tortoiseRightMoving");
+	cache->addAnimation(myutil::createAnimation("tortoise0.png", 8, 2, 18, 0.4f), "tortoiseDead");
+	cache->addAnimation(myutil::createAnimation("tortoise0.png", 0, 2, 18, 0.4f), "tortoiseFlyLeft");
+	cache->addAnimation(myutil::createAnimation("tortoise0.png", 6, 2, 18, 0.4f), "tortoiseFlyRight");
+	cache->addAnimation(myutil::createAnimation("flower0.png", 0, 2, 16, 0.5f), "flowerShow");
+	SpriteFrameCache::getInstance()->addSpriteFrame(myutil::getSpriteFrame("rewardMushroomSet.png", 0, 16), "rewardMushroom");
+	cache->addAnimation(myutil::createAnimation("flyFishLeft.png", 0, 6, 16, 0.4f), "flyFishLeft");
+	cache->addAnimation(myutil::createAnimation("flyFishRight.png", 0, 6, 16, 0.4f), "flyFishRight");
+	cache->addAnimation(myutil::createAnimation("boss.png", 0, 4, 32, 0.4f), "bossLeft");
+	cache->addAnimation(myutil::createAnimation("boss.png", 4, 4, 32, 0.4f), "bossRight");
 }
-void SceneGame::onEnter() {
+
+void SceneGame::onEnter()
+{
 	Scene::onEnter();
-	//cocos2d-x
-	//���ű�������
-	CocosDenshion::SimpleAudioEngine::getInstance()->playBackgroundMusic("OnLand.wma", true);
-	CocosDenshion::SimpleAudioEngine::getInstance()->setBackgroundMusicVolume(0.5f);
+	AudioEngine::resumeAll();
+
+	CCLOG("Attempting to play background music: %s", SOUND_game_music);
+	int audioId = AudioEngine::play2d(SOUND_game_music, true, 0.5f);
+
+	if (audioId == AudioEngine::INVALID_AUDIO_ID)
+	{
+		CCLOG("ERROR: Failed to play background music.");
+	}
+	else
+	{
+		CCLOG("SUCCESS: Background music started with ID: %d", audioId);
+	}
+
 	scheduleUpdate();
 
 	auto kb = EventListenerKeyboard::create();
-	kb->onKeyPressed = [this](EventKeyboard::KeyCode c, Event*) {
-		if (c == EventKeyboard::KeyCode::KEY_SPACE) {
-			if (_mario) _mario->fireArrow();
+	kb->onKeyPressed = [this](EventKeyboard::KeyCode c, Event *)
+	{
+		if (c == EventKeyboard::KeyCode::KEY_SPACE)
+		{
+			if (_mario)
+				_mario->fireArrow();
 		}
-		};
+	};
 	_eventDispatcher->addEventListenerWithSceneGraphPriority(kb, this);
-
-
 }
-void SceneGame::onExit() {
 
-	CocosDenshion::SimpleAudioEngine::getInstance()->stopBackgroundMusic();
-
+void SceneGame::onExit()
+{
+	AudioEngine::stopAll();
 	Scene::onExit();
 }
-void SceneGame::update(float delta) {
+
+void SceneGame::update(float delta)
+{
+	if (_firstUpdate)
+	{
+		CCLOG("--- SceneGame::update() is running. ---");
+		_firstUpdate = false;
+	}
 	moveMarioCheck(delta);
 	marioEatCoinCheck(delta);
 	checkMarioTouchPole(delta);
 	marioHitSomethingCheck(delta);
-
-
-
 }
-void SceneGame::marioEatCoinCheck(float delta) {
-	TMXLayer* coinLayer = _map->getLayer("coin");
+
+void SceneGame::marioEatCoinCheck(float delta)
+{
+	TMXLayer *coinLayer = _map->getLayer("coin");
 	if (!coinLayer)
 		return;
-	Vec2 pts[4];
-	Rect rc = _mario->getBoundingBox();
-	pts[0] = Vec2(rc.getMinX(), rc.getMinY());
-	pts[1] = Vec2(rc.getMinX(), rc.getMaxY());
-	pts[2] = Vec2(rc.getMaxX(), rc.getMinY());
-	pts[3] = Vec2(rc.getMaxX(), rc.getMaxY());
-	for (int i = 0; i < 4; ++i) {
 
-		Vec2 ptTile = myutil::bLGLPointToTile(pts[i], _map);
+	Rect rc = _mario->getBoundingBox();
+	Vec2 pts[] = {rc.origin, Vec2(rc.getMinX(), rc.getMaxY()), Vec2(rc.getMaxX(), rc.getMinY()), Vec2(rc.getMaxX(), rc.getMaxY())};
+
+	for (const auto &pt : pts)
+	{
+		Vec2 ptTile = myutil::bLGLPointToTile(pt, _map);
 		if (ptTile.x < 0 || ptTile.y < 0 || ptTile.y >= _map->getMapSize().height)
 			continue;
-		int gid = coinLayer->getTileGIDAt(ptTile);
-		if (gid) {
-			//���ųԽ�ҵ�����
-			CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("EatCoin.wma");
+
+		if (coinLayer->getTileGIDAt(ptTile))
+		{
+			AudioEngine::play2d(SOUND_eat_coin);
 			coinLayer->setTileGID(0, ptTile);
 		}
 	}
 }
-void SceneGame::marioEatHideMushroomCheck() {
-	if (_mario->getSpeedY() > 5) {
 
-		for (auto mushroom : _mushrooms) {
-			Rect rect = mushroom->getBoundingBox();
-			if (rect.intersectsRect(this->getBoundingBox())) {
-				//�������ص�Ģ����
+void SceneGame::marioEatHideMushroomCheck() {}
 
-			}
-		}
-	}
-
-
-
-}
-void SceneGame::moveRightCallback(Ref*) {
-	_menuShow->setTexture(_textureDirRight);
+void SceneGame::moveRightCallback(Ref *)
+{
 	_menuDir = common::RIGHT;
 }
-void SceneGame::moveLeftCallback(Ref*) {
-	_menuShow->setTexture(_textureDirLeft);
+
+void SceneGame::moveLeftCallback(Ref *)
+{
 	_menuDir = common::LEFT;
 }
-void SceneGame::moveMarioCheck(float delta) {
-	if (_isAutoRunning) {
-		return;
-	}
 
+void SceneGame::moveMarioCheck(float delta)
+{
 #ifdef WIN32
-	short key;
-	key = GetKeyState('A');
-	if (key < 0)_menuDir = common::LEFT;
-	key = GetKeyState('D');
-	if (key < 0)_menuDir = common::RIGHT;
-	key = GetKeyState('J');
-	if (key < 0)jumpKeyCallback(nullptr);
+	if (GetKeyState('A') < 0)
+		_menuDir = common::LEFT;
+	if (GetKeyState('D') < 0)
+		_menuDir = common::RIGHT;
+	if (GetKeyState('J') < 0)
+		jumpKeyCallback(nullptr);
 #endif
 
-	common::Direction dir = _menuDir;
-	switch (dir)
+	switch (_menuDir)
 	{
-
 	case common::RIGHT:
 	case common::LEFT:
-		_mario->setHorizontalSpeed(dir);
+		_mario->setHorizontalSpeed(_menuDir);
 		_menuDir = common::NONE;
 		break;
-
 	case common::NONE:
-		//_menuShow->setTexture(_textureDirNone);
 		_mario->stop();
 		break;
 	default:
 		break;
 	}
-	//ÿ��֡ѭ����ȥ�����ƶ�,��ֱ�������ٶ����ƶ�,û�ٶ���ֹ
 	_mario->moveVerticalCheck(delta);
-
-	//ÿ��֡ѭ����ȥ�����ƶ�,���ҷ������ٶ����ƶ�,û�ٶ���ֹ
 	_mario->moveHorizontalCheck(delta);
-
-
 }
-void SceneGame::jumpKeyCallback(Ref*) {
+
+void SceneGame::jumpKeyCallback(Ref *)
+{
 	_mario->jump();
 }
-void SceneGame::fireKeyCallback(Ref*) {}
-void SceneGame::gameOver() {
 
+void SceneGame::fireKeyCallback(Ref *) {}
+
+void SceneGame::gameOver()
+{
 	Director::getInstance()->replaceScene(SceneStart::create());
 }
-void SceneGame::checkMarioTouchPole(float dt) {
 
-	if (_mario->getPositionY() >= _map->getContentSize().height || _mario->getPositionY() <= 0)
+void SceneGame::checkMarioTouchPole(float dt)
+{
+	if (!_itemFlagpoint || _mario->getPositionY() >= _map->getContentSize().height || _mario->getPositionY() <= 0)
 		return;
 
-	auto rcMario = _mario->getBoundingBox();
-	Vec2 pt = Vec2(rcMario.getMidX(), rcMario.getMaxY());
-	Vec2 ptTile = myutil::bLGLPointToTile(pt, _map);
-	Rect mapSizeRect(Vec2(0, 0), _map->getMapSize() - Size(1, 1));
-
-
-	if (!mapSizeRect.containsPoint(ptTile))
-		return;
-
-	TMXLayer* layer = _map->getLayer("flagpole");
-
-	if (layer->getTileGIDAt(ptTile)) {
-		//���������
-		//_isAutoRunning = true;
-		//_mario->autoRun();
+	if (_mario->getBoundingBox().intersectsRect(_itemFlagpoint->getBoundingBox()))
+	{
+		_mario->autoRun();
 		unschedule(CC_SCHEDULE_SELECTOR(SceneGame::checkMarioTouchPole));
-
-		//�����Ƿ������յ���ײ���
 		schedule(CC_SCHEDULE_SELECTOR(SceneGame::checkMarioTouchEndPointCallback));
 	}
 }
-void SceneGame::checkMarioTouchEndPointCallback(float dt) {
 
-	if (_mario->getPositionX() >= _finalPoint->getPositionX()) {
+void SceneGame::checkMarioTouchEndPointCallback(float dt)
+{
+	if (!_finalPoint || _mario->getPositionX() >= _finalPoint->getPositionX())
+	{
 		unschedule(CC_SCHEDULE_SELECTOR(SceneGame::checkMarioTouchEndPointCallback));
+		_mario->endAutoRun();
+		_mario->removeFromParent();
 
-		if (_level < ALL_LEVEL_NUM) {
-
-			/*_mario->endAutoRun();
-			_isAutoRunning = false;*/
-
-			//��Ϊ��һ��������Ҫ�õ���������_mario�洢�ĸ��׽ڵ�ָ���ÿ�
-			_mario->removeFromParent();
-			Director::getInstance()->replaceScene(SceneGame::create(_level + 1));
+		Scene *nextScene = nullptr;
+		int nextLevel = _level + 1;
+		if (nextLevel <= ALL_LEVEL_NUM)
+		{
+			nextScene = SceneGame::create(nextLevel);
 		}
-		else {
-
-			//ȫ������
-			Director::getInstance()->replaceScene(SceneStart::create());
+		else
+		{
+			nextScene = SceneStart::create();
 		}
-
+		Director::getInstance()->replaceScene(nextScene);
 	}
 }
+
 void SceneGame::marioHitSomethingCheck(float dt)
 {
+	if (_mario->getSpeedY() <= 0)
+		return;
 
-	if (_mario->getSpeedY() > 0) {
+	Vec2 headMid = Vec2(_mario->getBoundingBox().getMidX(), _mario->getBoundingBox().getMaxY() + _mario->getSpeedY() * dt);
+	if (headMid.y >= _map->getContentSize().height)
+		return;
 
-		//Mario��������
+	TMXLayer *blockLayer = _map->getLayer("block");
+	if (!blockLayer)
+		return;
 
-		//�õ���һ֡Marioͷ���м�ĵ�
-		Vec2 marioPointOfHeadMid(_mario->getBoundingBox().getMidX(), _mario->getBoundingBox().getMaxY() + _mario->getSpeedY() * dt);
-		if (marioPointOfHeadMid.y >= _map->getContentSize().height)
-			return;
+	Vec2 tileCoord = myutil::bLGLPointToTile(headMid, _map);
+	Sprite *targetTile = blockLayer->getTileAt(tileCoord);
 
-		Vec2 tileCoordiate;
-
-		//�õ��õ�ĵ�ͼ����
-		Sprite* spriteInMarioHead = _map->getLayer("block")->getTileAt(tileCoordiate = myutil::bLGLPointToTile(marioPointOfHeadMid, _map));
-
-		Sprite* marioHitTarget = nullptr;
-		int blockGid = 0;
-		if (spriteInMarioHead) {
-			marioHitTarget = spriteInMarioHead;
-			blockGid = _map->getLayer("block")->getTileGIDAt(tileCoordiate);
-		}
-		else {
-			//ͷ���м�ĵ�û����������ͷ����ߵĵ���û��ײ��
-
-			//�õ���һ֡Marioͷ����ߵĵ�
-			Vec2 marioPointOfHeadLeft(_mario->getBoundingBox().getMinX(), _mario->getBoundingBox().getMaxY() + _mario->getSpeedY() * dt);
-
-			//�õ��õ�ĵ�ͼ����
-			Sprite* spriteInMarioHeadLeft = _map->getLayer("block")->getTileAt(tileCoordiate = myutil::bLGLPointToTile(marioPointOfHeadMid, _map));
-			if (spriteInMarioHeadLeft) {
-				//���ײ����
-				blockGid = _map->getLayer("block")->getTileGIDAt(tileCoordiate);
-				marioHitTarget = spriteInMarioHeadLeft;
-			}
-			else
-			{
-				//���Ҳû�У���ô�ٿ����ұ�
-				//�õ���һ֡Marioͷ���ұߵĵ�
-				Vec2 marioPointOfHeadLRight(_mario->getBoundingBox().getMaxX(), _mario->getBoundingBox().getMaxY() + _mario->getSpeedY() * dt);
-
-				//�õ��õ�ĵ�ͼ����
-				Sprite* spriteInMarioHeadRight = _map->getLayer("block")->getTileAt(tileCoordiate = myutil::bLGLPointToTile(marioPointOfHeadMid, _map));
-				if (spriteInMarioHeadRight) {
-					//�ұ�ײ����
-					blockGid = _map->getLayer("block")->getTileGIDAt(tileCoordiate);
-					marioHitTarget = spriteInMarioHeadRight;
-				}
-			}
-		}
-		if (marioHitTarget) {
-			//mario����שͷ��
-			common::BlockType blockType = common::getBlockTypeByGid(blockGid);
-			marioHitBlockHandle(marioHitTarget, tileCoordiate, blockType);
-		}
-
+	if (targetTile)
+	{
+		int gid = blockLayer->getTileGIDAt(tileCoord);
+		marioHitBlockHandle(targetTile, tileCoord, common::getBlockTypeByGid(gid));
 	}
-
-
 }
-void SceneGame::marioHitBlockHandle(Sprite* block, const Vec2& tileCoordiate, common::BlockType blockType) {
-	//�ж�שͷ������
+
+void SceneGame::marioHitBlockHandle(Sprite *block, const Vec2 &tileCoordiate, common::BlockType blockType)
+{
 	switch (blockType)
 	{
 	case common::common:
-	{
-
-		if (_mario->getState() == Mario::Small) {
-			//��������ש��һ��
-			JumpBy* by = JumpBy::create(0.15f, Vec2(0, 0), 8, 1);
-			block->runAction(Sequence::create(by, nullptr));
+		if (_mario->getState() == Mario::Small)
+		{
+			block->runAction(JumpBy::create(0.15f, Vec2::ZERO, 8, 1));
 		}
-		else {
-			//ש������
+		else
+		{
 			destroyBlock(block);
 		}
 		break;
-	}
 	case common::question:
-	{
 		marioHitQuestionHandle(block, tileCoordiate);
-		break;
-	}
-	case common::commonGetHard:
-
-		break;
-	case common::commonHarfOnRight:
-
-		break;
-	case common::commonHarfOnRiLeft:
-
-		break;
-	case common::hardHarfOnRight:
-
-		break;
-	case common::hardHarfOnRiLeft:
-
-		break;
-	case common::Hard:
-
-		break;
-	case common::none:
-
 		break;
 	default:
 		break;
 	}
-
-
-
 }
 
-void SceneGame::marioHitQuestionHandle(Sprite* block, const Vec2& tileCoordiate) {
-	//����question,��Ȼ���ڱ����ͨӲت
-
+void SceneGame::marioHitQuestionHandle(Sprite *block, const Vec2 &tileCoordiate)
+{
 	_map->getLayer("block")->setTileGID(31, tileCoordiate);
 
 	Rect rcNode = block->getBoundingBox();
 	rcNode.size = rcNode.size - Size(1, 1);
 
-	ItemMushroom* mushroom = nullptr;
-	for (auto ib = _mushrooms.begin(); ib != _mushrooms.end(); ++ib) {
-		Item* item = *ib;
-		Rect rcItem = item->getBoundingBox();
-		rcItem.size = rcItem.size - Size(1, 1);
-
-		//ײ��Ģ����
-		if (rcItem.intersectsRect(rcNode)) {
-
-			mushroom = dynamic_cast<ItemMushroom*>(item);
-			if (!mushroom) {
-				CCLOG_DYNAMIC_ERR;
+	ItemMushroom *mushroom = nullptr;
+	for (auto it = _mushrooms.begin(); it != _mushrooms.end(); ++it)
+	{
+		if ((*it)->getBoundingBox().intersectsRect(rcNode))
+		{
+			mushroom = dynamic_cast<ItemMushroom *>(*it);
+			if (mushroom)
+			{
+				_mushrooms.erase(it);
 				break;
 			}
-			_mushrooms.erase(ib);
-			break;
 		}
 	}
 
-	if (!mushroom) {
-		//û��ײ��Ģ��������һ�����G
-		TMXLayer* layer = _map->getLayer("coin");
-		Vec2 tileCoordiateCoin = tileCoordiate - Vec2(0, 1);
-		layer->setTileGID(GID_COIN, tileCoordiateCoin);
-		Sprite* coin = layer->getTileAt(tileCoordiateCoin);
-		coin->runAction(Sequence::create(JumpBy::create(.5f, Vec2(0, 0), 30, 1), CallFunc::create(std::bind(&Sprite::removeFromParent, coin)), nullptr));
+	if (!mushroom)
+	{
+		AudioEngine::play2d(SOUND_eat_coin);
+		if (TMXLayer *layer = _map->getLayer("coin"))
+		{
+			Vec2 coinCoord = tileCoordiate - Vec2(0, 1);
+			layer->setTileGID(GID_COIN, coinCoord);
+			if (Sprite *coin = layer->getTileAt(coinCoord))
+			{
+				coin->runAction(Sequence::create(JumpBy::create(0.5f, Vec2::ZERO, 30, 1), RemoveSelf::create(), nullptr));
+			}
+		}
 	}
-
 
 	auto func = std::bind(&SceneGame::marioHitQuestionAnimationEndCallback, this, std::placeholders::_1, mushroom);
-	CallFuncN* callfunc = CallFuncN::create(func);
-	JumpBy* by = JumpBy::create(0.15f, Vec2(0, 0), 8, 1);
-	block->runAction(Sequence::create(by, callfunc, nullptr));
-
+	block->runAction(Sequence::create(JumpBy::create(0.15f, Vec2::ZERO, 8, 1), CallFuncN::create(func), nullptr));
 }
 
-void SceneGame::marioHitQuestionAnimationEndCallback(Node* block, ItemMushroom* mushroom) {
-
+void SceneGame::marioHitQuestionAnimationEndCallback(Node *block, ItemMushroom *mushroom)
+{
 	if (mushroom)
-		mushroom->wakeup();
-
-}
-void SceneGame::destroyBlock(Sprite* block) {
-	SpriteFrame* spriteFrame = block->getSpriteFrame();
-
-	const Rect& rc = spriteFrame->getRect();
-
-	Rect rcc(rc);
-	rcc.size = rcc.size / 2;
-
-	Texture2D* texture2D = spriteFrame->getTexture();
-	SpriteFrame* smallSpriteFrame = SpriteFrame::createWithTexture(texture2D, rcc);
-
-	Sprite* sps[4];
-	for (size_t i = 0; i < 4; i++)
 	{
-		_map->addChild(sps[i] = Sprite::createWithSpriteFrame(smallSpriteFrame));
+		AudioEngine::play2d(SOUND_mushroom_up);
+		mushroom->wakeup();
 	}
-
-
-	sps[0]->setPosition(block->getPosition() + Vec2(-4, 4));
-
-	sps[1]->setPosition(block->getPosition() + Vec2(4, 4));
-	sps[2]->setPosition(block->getPosition() + Vec2(-4, -4));
-	sps[3]->setPosition(block->getPosition() + Vec2(4, -4));
-	sps[0]->runAction(Sequence::create(JumpBy::create(0.5f, Vec2(-50, -60), 40, 1), CallFunc::create(std::bind(&Sprite::removeFromParent, sps[0])), nullptr));
-	sps[1]->runAction(Sequence::create(JumpBy::create(0.5f, Vec2(50, -60), 40, 1), CallFunc::create(std::bind(&Sprite::removeFromParent, sps[1])), nullptr));
-	sps[2]->runAction(Sequence::create(JumpBy::create(0.5f, Vec2(-50, -60), 20, 1), CallFunc::create(std::bind(&Sprite::removeFromParent, sps[2])), nullptr));
-	sps[3]->runAction(Sequence::create(JumpBy::create(0.5f, Vec2(50, -60), 20, 1), CallFunc::create(std::bind(&Sprite::removeFromParent, sps[3])), nullptr));
-
-	block->removeFromParent();
-
 }
-void SceneGame::openSettingMenu(Ref* sender) {
-	// Tạm dừng game
-	Director::getInstance()->pause();
 
-	// Tạo lớp nền mờ
+void SceneGame::destroyBlock(Sprite *block)
+{
+	if (!block->getSpriteFrame())
+		return;
+
+	const Rect &rc = block->getSpriteFrame()->getRect();
+	Rect rcc(rc.origin, rc.size / 2);
+	Texture2D *texture = block->getSpriteFrame()->getTexture();
+
+	for (int i = 0; i < 4; ++i)
+	{
+		rcc.origin = rc.origin + Vec2(static_cast<float>(i % 2) * rcc.size.width, static_cast<float>(i / 2) * rcc.size.height);
+		auto smallFrame = SpriteFrame::createWithTexture(texture, rcc);
+		auto sp = Sprite::createWithSpriteFrame(smallFrame);
+		_map->addChild(sp);
+		sp->setPosition(block->getPosition() + Vec2((i % 2 * 2 - 1) * 4.0f, (i / 2 * 2 - 1) * 4.0f));
+
+		float jumpX = (i % 2 * 2 - 1) * 50.0f;
+		float jumpY = (i < 2) ? 40.0f : 20.0f;
+		sp->runAction(Sequence::create(JumpBy::create(0.5f, Vec2(jumpX, -60), jumpY, 1), RemoveSelf::create(), nullptr));
+	}
+	AudioEngine::play2d(SOUND_break_brick);
+	block->removeFromParent();
+}
+
+void SceneGame::openSettingMenu(Ref *sender)
+{
+	Director::getInstance()->pause();
 	auto layerColor = LayerColor::create(Color4B(0, 0, 0, 150));
-	layerColor->setName("PauseLayer"); // để dễ xóa sau
+	layerColor->setName("PauseLayer");
 	this->addChild(layerColor, 20);
 
-	// === Nút Resume ===
-	auto labelResume = Label::createWithTTF("Resume", "fonts/Marker Felt.ttf", 28);
-	auto resumeItem = MenuItemLabel::create(labelResume, CC_CALLBACK_1(SceneGame::resumeGameCallback, this));
-
-	// === Nút Quit ===
-	auto labelQuit = Label::createWithTTF("Quit", "fonts/Marker Felt.ttf", 28);
-	auto quitItem = MenuItemLabel::create(labelQuit, CC_CALLBACK_1(SceneGame::quitGameCallback, this));
-
-	// === Nút Bật/Tắt âm thanh ===
+	auto resumeItem = MenuItemLabel::create(Label::createWithTTF("Resume", "fonts/Marker Felt.ttf", 28), CC_CALLBACK_1(SceneGame::resumeGameCallback, this));
+	auto quitItem = MenuItemLabel::create(Label::createWithTTF("Quit", "fonts/Marker Felt.ttf", 28), CC_CALLBACK_1(SceneGame::quitGameCallback, this));
 	std::string soundText = isSoundOnn ? "Sound: ON" : "Sound: OFF";
-	auto labelSound = Label::createWithTTF(soundText, "fonts/Marker Felt.ttf", 28);
-	auto soundItem = MenuItemLabel::create(labelSound, CC_CALLBACK_1(SceneGame::toggleSoundCallback, this));
+	auto soundItem = MenuItemLabel::create(Label::createWithTTF(soundText, "fonts/Marker Felt.ttf", 28), CC_CALLBACK_1(SceneGame::toggleSoundCallback, this));
 
-	// Tạo menu
 	auto menu = Menu::create(resumeItem, soundItem, quitItem, nullptr);
 	menu->alignItemsVerticallyWithPadding(15);
 	menu->setPosition(Vec2(winSize.width / 2, winSize.height / 2));
 	layerColor->addChild(menu);
 }
 
-void SceneGame::resumeGameCallback(Ref* sender) {
+void SceneGame::resumeGameCallback(Ref *sender)
+{
 	this->removeChildByName("PauseLayer");
 	Director::getInstance()->resume();
 }
 
-void SceneGame::quitGameCallback(Ref* sender) {
-	Director::getInstance()->resume(); // tránh bị pause ở scene mới
+void SceneGame::quitGameCallback(Ref *sender)
+{
+	Director::getInstance()->resume();
 	Director::getInstance()->replaceScene(SceneLoadResource::createScene());
 }
 
-void SceneGame::toggleSoundCallback(Ref* sender) {
+void SceneGame::toggleSoundCallback(Ref *sender)
+{
 	isSoundOnn = !isSoundOnn;
-	// Cập nhật lại chữ
-	auto layer = this->getChildByName("PauseLayer");
-	if (layer) {
-		layer->removeFromParent();
-		openSettingMenu(nullptr); // mở lại menu với chữ cập nhật
+
+	if (isSoundOnn)
+	{
+		AudioEngine::resumeAll();
+	}
+	else
+	{
+		AudioEngine::pauseAll();
 	}
 
-	// Ở đây bạn có thể thêm code bật/tắt âm thật, ví dụ:
-	// if (isSoundOnn) SimpleAudioEngine::getInstance()->resumeBackgroundMusic();
-	// else SimpleAudioEngine::getInstance()->pauseBackgroundMusic();
+	if (auto layer = this->getChildByName("PauseLayer"))
+	{
+		layer->removeFromParent();
+		openSettingMenu(nullptr);
+	}
 }

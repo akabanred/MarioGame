@@ -13,29 +13,29 @@ class ItemMushroom;
 class SceneGame : public Scene
 {
 public:
-    static SceneGame* create(int level);
+    static SceneGame *create(int level);
 
-    void moveRightCallback(Ref*);
-    void moveLeftCallback(Ref*);
-    void jumpKeyCallback(Ref*);
-    void fireKeyCallback(Ref*);
+    void moveRightCallback(Ref *);
+    void moveLeftCallback(Ref *);
+    void jumpKeyCallback(Ref *);
+    void fireKeyCallback(Ref *);
     void checkMarioTouchPole(float dt);
     void checkMarioTouchEndPointCallback(float dt);
     void gameOver();
 
 private:
-	bool init(int level);
-	void addMap();
-	void addCtrlButton();
-	bool isSoundOnn = true; 
+    bool init(int level);
+    void addMap();
+    void addCtrlButton();
+    bool isSoundOnn = true;
 
-    void openSettingMenu(Ref* sender);
-    void resumeGameCallback(Ref* sender);
-    void quitGameCallback(Ref* sender);
-    void toggleSoundCallback(Ref* sender);
+    void openSettingMenu(Ref *sender);
+    void resumeGameCallback(Ref *sender);
+    void quitGameCallback(Ref *sender);
+    void toggleSoundCallback(Ref *sender);
 
-	void addMapObjectGroup();
-	void addAnimationToCache();
+    void addMapObjectGroup();
+    void addAnimationToCache();
 
     /* override */
     void onEnter() override;
@@ -46,33 +46,39 @@ private:
     void marioEatCoinCheck(float delta);
     void marioEatHideMushroomCheck();
     void marioHitSomethingCheck(float dt);
-    void marioHitBlockHandle(Sprite* block, const Vec2& tileCoordiate, common::BlockType type);
-    void marioHitQuestionAnimationEndCallback(Node* block, ItemMushroom* mushroom);
-    void marioHitQuestionHandle(Sprite* block, const Vec2& tileCoordiate);
-    void destroyBlock(Sprite* block);
+    void marioHitBlockHandle(Sprite *block, const Vec2 &tileCoordiate, common::BlockType type);
+    void marioHitQuestionAnimationEndCallback(Node *block, ItemMushroom *mushroom);
+    void marioHitQuestionHandle(Sprite *block, const Vec2 &tileCoordiate);
+    void destroyBlock(Sprite *block);
 
 public:
-    TMXTiledMap*    _map = nullptr;
-    ProgressBar*    _bar = nullptr;
-    int             _level = 1;
+    TMXTiledMap *_map = nullptr;
+    ProgressBar *_bar = nullptr;
+    int _level = 1;
 
-    Mario*          _mario = nullptr;
-    Item*           _itemFlagpoint = nullptr;
-    Item*           _finalPoint = nullptr;
+    Mario *_mario = nullptr;
+    Item *_itemFlagpoint = nullptr;
+    Item *_finalPoint = nullptr;
 
-    Texture2D*      _textureDirNone = nullptr;
-    Texture2D*      _textureDirRight = nullptr;
-    Texture2D*      _textureDirLeft = nullptr;
+    Texture2D *_textureDirNone = nullptr;
+    Texture2D *_textureDirRight = nullptr;
+    Texture2D *_textureDirLeft = nullptr;
 
-    Sprite*                 _menuShow = nullptr;
-    common::Direction       _menuDir = common::NONE;
-    std::set<Item*>         _items;
-    std::list<Item*>        _mushrooms;
+    Sprite *_menuShow = nullptr;
+    common::Direction _menuDir = common::NONE;
+    std::set<Item *> _items;
+    std::list<Item *> _mushrooms;
 
     // Cờ để tránh spawn boss trùng
     bool _bossSpawned;
+
+    // MERGED: Variables from the new code
     bool _isAutoRunning;
     bool _hasTouchedPole;
+
+private:
+    // MERGED: Variable from our code
+    bool _firstUpdate = true;
 };
 
 #endif // __SceneGame_H__
