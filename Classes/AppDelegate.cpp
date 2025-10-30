@@ -14,7 +14,8 @@
 
 USING_NS_CC;
 
-static cocos2d::Size designResolutionSize = cocos2d::Size(480, 320);
+// MERGED: Resolution change from the new code is included here.
+static cocos2d::Size designResolutionSize = cocos2d::Size(1024, 768);
 static cocos2d::Size smallResolutionSize = cocos2d::Size(480, 320);
 static cocos2d::Size mediumResolutionSize = cocos2d::Size(1024, 768);
 static cocos2d::Size largeResolutionSize = cocos2d::Size(2048, 1536);
@@ -64,7 +65,7 @@ bool AppDelegate::applicationDidFinishLaunching()
                                             cocos2d::Rect(0, 0, designResolutionSize.width, designResolutionSize.height));
 #else
         CCLOG("Create GLView default");
-        glview = GLViewImpl::create("Mario"); // <--- CORRECTED TYPO HERE
+        glview = GLViewImpl::create("Mario");
 #endif
         director->setOpenGLView(glview);
     }
