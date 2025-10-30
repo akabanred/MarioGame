@@ -72,6 +72,7 @@ public:
     // Cờ để tránh spawn boss trùng
     bool _bossSpawned;
     bool _isAutoRunning;
+    bool _hasTouchedPole;
 };
 
 #endif // __SceneGame_H__

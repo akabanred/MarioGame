@@ -35,7 +35,7 @@ bool SceneGame::init(int level)
 	_finalPoint = nullptr;
 	_bossSpawned = false;
 	_isAutoRunning = false;
-
+	_hasTouchedPole = false;
 	addMap();
 	addCtrlButton();
 	addAnimationToCache();
@@ -502,7 +502,7 @@ void SceneGame::checkMarioTouchPole(float dt) {
 
 	TMXLayer* layer = _map->getLayer("flagpole");
 
-	//if (layer->getTileGIDAt(ptTile)) {
+	if (layer->getTileGIDAt(ptTile)) {
 		//���������
 		//_isAutoRunning = true;
 		//_mario->autoRun();
@@ -510,12 +510,12 @@ void SceneGame::checkMarioTouchPole(float dt) {
 
 		//�����Ƿ������յ���ײ���
 		schedule(CC_SCHEDULE_SELECTOR(SceneGame::checkMarioTouchEndPointCallback));
-	//}
+	}
 }
 void SceneGame::checkMarioTouchEndPointCallback(float dt) {
 
 	if (_mario->getPositionX() >= _finalPoint->getPositionX()) {
-		//unschedule(CC_SCHEDULE_SELECTOR(SceneGame::checkMarioTouchEndPointCallback));
+		unschedule(CC_SCHEDULE_SELECTOR(SceneGame::checkMarioTouchEndPointCallback));
 
 		if (_level < ALL_LEVEL_NUM) {
 
