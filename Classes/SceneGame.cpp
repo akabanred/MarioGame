@@ -34,6 +34,7 @@ bool SceneGame::init(int level)
 	_level = level;
 	_finalPoint = nullptr;
 	_bossSpawned = false;
+	_isAutoRunning = false;
 
 	addMap();
 	addCtrlButton();
@@ -438,6 +439,9 @@ void SceneGame::moveLeftCallback(Ref*) {
 	_menuDir = common::LEFT;
 }
 void SceneGame::moveMarioCheck(float delta) {
+	if (_isAutoRunning) {
+		return;
+	}
 
 #ifdef WIN32
 	short key;
@@ -498,34 +502,34 @@ void SceneGame::checkMarioTouchPole(float dt) {
 
 	TMXLayer* layer = _map->getLayer("flagpole");
 
-	if (layer->getTileGIDAt(ptTile)) {
+	//if (layer->getTileGIDAt(ptTile)) {
 		//���������
-		_mario->autoRun();
+		//_isAutoRunning = true;
+		//_mario->autoRun();
 		unschedule(CC_SCHEDULE_SELECTOR(SceneGame::checkMarioTouchPole));
 
 		//�����Ƿ������յ���ײ���
 		schedule(CC_SCHEDULE_SELECTOR(SceneGame::checkMarioTouchEndPointCallback));
-	}
+	//}
 }
 void SceneGame::checkMarioTouchEndPointCallback(float dt) {
 
 	if (_mario->getPositionX() >= _finalPoint->getPositionX()) {
-		unschedule(CC_SCHEDULE_SELECTOR(SceneGame::checkMarioTouchEndPointCallback));
+		//unschedule(CC_SCHEDULE_SELECTOR(SceneGame::checkMarioTouchEndPointCallback));
 
 		if (_level < ALL_LEVEL_NUM) {
 
-			_mario->endAutoRun();
+			/*_mario->endAutoRun();
+			_isAutoRunning = false;*/
 
 			//��Ϊ��һ��������Ҫ�õ���������_mario�洢�ĸ��׽ڵ�ָ���ÿ�
 			_mario->removeFromParent();
-			Director::getInstance()->
-				replaceScene(SceneGame::create(_level + 1));
+			Director::getInstance()->replaceScene(SceneGame::create(_level + 1));
 		}
 		else {
 
 			//ȫ������
-			Director::getInstance()->
-				replaceScene(SceneStart::create());
+			Director::getInstance()->replaceScene(SceneStart::create());
 		}
 
 	}
