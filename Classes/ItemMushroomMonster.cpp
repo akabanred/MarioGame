@@ -1,21 +1,22 @@
 #include "ItemMushroomMonster.h"
 #include "Mario.h"
-
-ItemMushroomMonster* ItemMushroomMonster::create(ValueMap& map)
+#include "AudioEngine.h"
+ItemMushroomMonster *ItemMushroomMonster::create(ValueMap &map)
 {
-	ItemMushroomMonster * pRet = new ItemMushroomMonster();
-	if (pRet&&pRet->init(map)){
+	ItemMushroomMonster *pRet = new ItemMushroomMonster();
+	if (pRet && pRet->init(map))
+	{
 		pRet->autorelease();
 	}
-	else{
+	else
+	{
 		delete pRet;
 		pRet = nullptr;
 	}
 	return pRet;
 }
 
-
-bool ItemMushroomMonster::init(ValueMap& map)
+bool ItemMushroomMonster::init(ValueMap &map)
 {
 	ItemCanMove::init();
 	_type = Item::IT_MushroomMonster;
@@ -29,40 +30,40 @@ bool ItemMushroomMonster::init(ValueMap& map)
 	return true;
 }
 
-
-
-
-
-
-
-void ItemMushroomMonster::collisionCheck(float dt){
-	if (this->isOutOfWindow()){
+void ItemMushroomMonster::collisionCheck(float dt)
+{
+	if (this->isOutOfWindow())
+	{
 		removeFromParent();
 		return;
 	}
-	if (_isDead || Mario::getInstance()->isDead()){
+	if (_isDead || Mario::getInstance()->isDead())
+	{
 		return;
 	}
 	Rect rcMario = Mario::getInstance()->getBoundingBox();
 	Rect rcItem = this->getBoundingBox();
 
-	if (rcMario.intersectsRect(rcItem)){
-		if (Mario::getInstance()->getSpeedY() <= 0 && rcMario.getMinY()>rcItem.getMaxY() - rcItem.size.height / 2){
-			//ÂíÀï°ÂÊ¤Àû
+	if (rcMario.intersectsRect(rcItem))
+	{
+		if (Mario::getInstance()->getSpeedY() <= 0 && rcMario.getMinY() > rcItem.getMaxY() - rcItem.size.height / 2)
+		{
+			AudioEngine::play2d(SOUND_enemy_down);
+			// ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½
 			this->stopAllActions();
 			this->setSpriteFrame(spriteFrameCache->getSpriteFrameByName("mushroomDead1"));
 			_speedX = 0;
 			this->_isDead = true;
-			
+
 			this->runAction(MoveBy::create(1, Vec2(0, -winSize.height)));
 		}
-		else{
-			//ÂíÀï°ÂËÀÍö
+		else
+		{
+			// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 			if (Mario::getInstance()->isGodMode())
 				return;
-			
+
 			Mario::getInstance()->die();
 		}
 	}
-
 }
