@@ -52,18 +52,22 @@ void SceneStart::startCallback(Ref *)
     Director::getInstance()->replaceScene(SceneSelectLevel::create());
 }
 
-void SceneStart::setupCallback(Ref *)
+void SceneStart::setupCallback(Ref*)
 {
-    // Toggle the sound state
-    _isSoundOn = !_isSoundOn;
+    // Biến lưu trạng thái âm thanh (nên đặt trong SceneStart.h)
+    static bool isSoundOn = true;
 
-    if (_isSoundOn)
+    if (isSoundOn)
     {
-        AudioEngine::resumeAll();
+        AudioEngine::pauseAll(); // hoặc stopAll() nếu muốn tắt hẳn
+        MessageBoxA(nullptr, "Am thanh da duoc tat.", "Cai dat", MB_OK);
+        isSoundOn = false;
     }
     else
     {
-        AudioEngine::pauseAll();
+        AudioEngine::resumeAll(); // bật lại tất cả âm thanh
+        MessageBoxA(nullptr, "Am thanh da duoc bat lai.", "Cai dat", MB_OK);
+        isSoundOn = true;
     }
 }
 
