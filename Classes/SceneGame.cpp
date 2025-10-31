@@ -332,9 +332,15 @@ void SceneGame::checkMarioTouchPole(float dt)
 	if (!_itemFlagpoint || _mario->getPositionY() >= _map->getContentSize().height || _mario->getPositionY() <= 0)
 		return;
 
-	if (_mario->getBoundingBox().intersectsRect(_itemFlagpoint->getBoundingBox()))
+	auto rcMario = _mario->getBoundingBox();
+	Vec2 pt = Vec2(rcMario.getMidX(), rcMario.getMaxY());
+	Vec2 ptTile = myutil::bLGLPointToTile(pt, _map);
+	Rect mapSizeRect(Vec2(0, 0), _map->getMapSize() - Size(1, 1));
+	TMXLayer* layer = _map->getLayer("flagpole");
+	//if (_mario->getBoundingBox().intersectsRect(_itemFlagpoint->getBoundingBox()))
+	if (layer->getTileGIDAt(ptTile))
 	{
-		_mario->autoRun();
+		//_mario->autoRun();
 		unschedule(CC_SCHEDULE_SELECTOR(SceneGame::checkMarioTouchPole));
 		schedule(CC_SCHEDULE_SELECTOR(SceneGame::checkMarioTouchEndPointCallback));
 	}
@@ -345,7 +351,7 @@ void SceneGame::checkMarioTouchEndPointCallback(float dt)
 	if (!_finalPoint || _mario->getPositionX() >= _finalPoint->getPositionX())
 	{
 		unschedule(CC_SCHEDULE_SELECTOR(SceneGame::checkMarioTouchEndPointCallback));
-		_mario->endAutoRun();
+		//_mario->endAutoRun();
 		_mario->removeFromParent();
 
 		Scene *nextScene = nullptr;
